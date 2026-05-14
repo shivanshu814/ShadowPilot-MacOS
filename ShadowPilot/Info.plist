@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.shadowpilot.app</string>
+    <key>CFBundleName</key>
+    <string>ShadowPilot</string>
+    <key>CFBundleDisplayName</key>
+    <string>ShadowPilot</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>ShadowPilot needs microphone access to hear interview questions.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>ShadowPilot uses speech recognition to transcribe interview questions.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>ShadowPilot captures meeting audio to hear the interviewer.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>ShadowPilot needs this to stay on top of other windows.</string>
+</dict>
+</plist>
