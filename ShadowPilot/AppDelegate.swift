@@ -87,10 +87,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Overlay pill
     func launchOverlay() {
         NSApp.setActivationPolicy(.accessory)
-        // Remove menu bar icon so app leaves no visible trace
         statusItem = nil
         overlayController = OverlayWindowController()
         overlayController?.showWindow(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            (self.overlayController?.window as? OverlayWindow)?.focusTextField()
+        }
     }
 
     private func requestPermissions() {

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AppKit
 import AVFoundation
 
 // Filler phrases shown while AI is thinking — buys time naturally
@@ -22,7 +23,7 @@ class AppViewModel: ObservableObject {
     @Published var statusText = "Ready"
     @Published var showAnswer = false
     @Published var isLoadingAnswer = false
-    @Published var isWriting = false
+    @Published var isWriting = true
     @Published var isCapturing = false
 
     // Feature flags
@@ -66,6 +67,7 @@ class AppViewModel: ObservableObject {
         hk.onGetAnswer  = { [weak self] in self?.getAnswer() }
         hk.onScreenshot = { [weak self] in self?.captureAndAnalyze() }
         hk.onClear      = { [weak self] in self?.clear() }
+        hk.onWritingToggle = { [weak self] in self?.toggleWriting() }
         hk.register()
     }
 
@@ -220,6 +222,17 @@ class AppViewModel: ObservableObject {
                 answer = "Error: \(error.localizedDescription)"
                 statusText = "Capture failed"
             }
+        }
+    }
+
+    // MARK: - Writing toggle
+    func toggleWriting() {
+        isWriting.toggle()
+        let panel = NSApp.windows.first(where: { $0 is OverlayWindow }) as? OverlayWindow
+        if isWriting {
+            panel?.focusTextField()
+        } else {
+            panel?.unfocusTextField()
         }
     }
 

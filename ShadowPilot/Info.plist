@@ -12,8 +12,6 @@
     <string>1</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0.0</string>
-    <key>LSUIElement</key>
-    <true/>
     <key>NSMicrophoneUsageDescription</key>
     <string>ShadowPilot needs microphone access to hear interview questions.</string>
     <key>NSSpeechRecognitionUsageDescription</key>

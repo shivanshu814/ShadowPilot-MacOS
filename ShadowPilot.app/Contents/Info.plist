@@ -40,8 +40,6 @@
 	<string>17F42</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
-	<key>LSUIElement</key>
-	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>ShadowPilot needs this to stay on top of other windows.</string>
 	<key>NSMicrophoneUsageDescription</key>

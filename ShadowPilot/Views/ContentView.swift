@@ -128,10 +128,67 @@ struct FillerBanner: View {
     }
 }
 
+// MARK: - FocusableTextField
+class FocusableNSTextField: NSTextField {
+    var onFirstClick: (() -> Void)?
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func mouseDown(with event: NSEvent) {
+        onFirstClick?()
+        super.mouseDown(with: event)
+    }
+}
+
+struct FocusableTextField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var onCommit: () -> Void
+    var onFirstClick: (() -> Void)? = nil
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeNSView(context: Context) -> FocusableNSTextField {
+        let tf = FocusableNSTextField()
+        tf.onFirstClick = onFirstClick
+        tf.delegate = context.coordinator
+        tf.isBezeled = false
+        tf.drawsBackground = false
+        tf.isEditable = true
+        tf.isSelectable = true
+        tf.focusRingType = .none
+        tf.placeholderString = placeholder
+        tf.font = .systemFont(ofSize: 13, weight: .medium)
+        tf.textColor = NSColor.labelColor.withAlphaComponent(0.85)
+        TextFieldRef.shared.field = tf
+        return tf
+    }
+
+    func updateNSView(_ tf: FocusableNSTextField, context: Context) {
+        tf.onFirstClick = onFirstClick
+        if tf.stringValue != text { tf.stringValue = text }
+        TextFieldRef.shared.field = tf
+    }
+
+
+    class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: FocusableTextField
+        init(_ p: FocusableTextField) { self.parent = p }
+        func controlTextDidChange(_ obj: Notification) {
+            if let tf = obj.object as? NSTextField { parent.text = tf.stringValue }
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+            if selector == #selector(NSResponder.insertNewline(_:)) {
+                parent.onCommit()
+                return true
+            }
+            return false
+        }
+    }
+}
+
 // MARK: - Main bar
 struct SpotlightBar: View {
     @ObservedObject var vm: AppViewModel
-    @FocusState private var isFieldFocused: Bool
+
 
     var body: some View {
         VStack(spacing: 0) {
@@ -142,31 +199,35 @@ struct SpotlightBar: View {
                     .frame(height: 16)
                     .opacity(0.25)
 
-                if vm.isWriting {
-                    TextField("Type your question...", text: $vm.transcript, onCommit: {
-                        vm.getAnswer()
-                        vm.isWriting = false
-                    })
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.spText)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.05)))
-                    .focused($isFieldFocused)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isFieldFocused = true
+                ZStack(alignment: .leading) {
+                    FocusableTextField(
+                        text: $vm.transcript,
+                        placeholder: "Type your question...",
+                        onCommit: {
+                            vm.getAnswer()
+                            vm.isWriting = false
+                            (NSApp.windows.first(where: { $0 is OverlayWindow }) as? OverlayWindow)?.unfocusTextField()
+                        },
+                        onFirstClick: {
+                            if !vm.isWriting { vm.toggleWriting() }
                         }
+                    )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 22)
+                    .opacity(vm.isWriting ? 1 : 0)
+
+                    if !vm.isWriting {
+                        Text(vm.statusText)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(vm.isListening ? .spText : .spSubtext)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .allowsHitTesting(false)
                     }
-                } else {
-                    Text(vm.statusText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(vm.isListening ? .spText : .spSubtext)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .animation(.easeInOut(duration: 0.15), value: vm.statusText)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if !vm.isWriting { vm.toggleWriting() }
                 }
 
                 HStack(spacing: 6) {
@@ -191,20 +252,6 @@ struct SpotlightBar: View {
                     .keyboardShortcut("s", modifiers: .command)
                     .disabled(vm.isCapturing)
 
-                    GlassButton(
-                        icon: "square.and.pencil",
-                        tint: vm.isWriting ? .spAmber : .spText,
-                        dimTint: vm.isWriting ? Color.spAmberDim : Color.primary.opacity(0.08)
-                    ) {
-                        vm.isWriting.toggle()
-                        if vm.isWriting {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                                NSApp.keyWindow?.makeKey()
-                                NSApp.activate(ignoringOtherApps: true)
-                            }
-                        }
-                    }
-                    .keyboardShortcut("w", modifiers: .command)
 
                     Button(action: vm.clear) {
                         Image(systemName: "xmark")

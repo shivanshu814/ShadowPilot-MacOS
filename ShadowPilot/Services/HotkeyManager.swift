@@ -9,6 +9,7 @@ final class HotkeyManager {
     var onGetAnswer: (() -> Void)?       // ⌘⇧A  — fire answer
     var onScreenshot: (() -> Void)?      // ⌘⇧S  — capture screen
     var onClear: (() -> Void)?           // ⌘⇧X  — clear
+    var onWritingToggle: (() -> Void)?   // ⌘⇧W  — toggle typing mode
 
     private var eventHandler: EventHandlerRef?
     private var hotkeys: [EventHotKeyRef?] = []
@@ -37,6 +38,7 @@ final class HotkeyManager {
                                     case 2: me.onGetAnswer?()
                                     case 3: me.onScreenshot?()
                                     case 4: me.onClear?()
+                                    case 5: me.onWritingToggle?()
                                     default: break
                                     }
                                 }
@@ -56,6 +58,9 @@ final class HotkeyManager {
         // ⌘⇧X  (clear)
         registerKey(keyCode: UInt32(kVK_ANSI_X),
                     modifiers: UInt32(cmdKey | shiftKey), id: 4)
+        // ⌘⇧W  (writing toggle)
+        registerKey(keyCode: UInt32(kVK_ANSI_W),
+                    modifiers: UInt32(cmdKey | shiftKey), id: 5)
     }
 
     private func registerKey(keyCode: UInt32, modifiers: UInt32, id: UInt32) {
