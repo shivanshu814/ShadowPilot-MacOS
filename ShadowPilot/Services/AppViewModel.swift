@@ -51,13 +51,17 @@ class AppViewModel: ObservableObject {
     private var whisperIndex = 0
     private var whisperTask: Task<Void, Never>?
 
-    private var primaryService: GPTService? {
-        EnvConfig.openAIKey.isEmpty ? nil : GPTService(apiKey: EnvConfig.openAIKey)
+    // Priority: Bedrock → OpenRouter → OpenAI
+    private var bedrockService: BedrockService? {
+        EnvConfig.bedrockKey.isEmpty ? nil : BedrockService(apiKey: EnvConfig.bedrockKey, region: EnvConfig.bedrockRegion)
     }
-    private var fallbackService: GPTService? {
+    private var openRouterService: GPTService? {
         EnvConfig.openRouterKey.isEmpty ? nil : GPTService(apiKey: EnvConfig.openRouterKey,
                                                             baseURL: "https://openrouter.ai/api/v1",
                                                             model: "openai/gpt-4o")
+    }
+    private var openAIService: GPTService? {
+        EnvConfig.openAIKey.isEmpty ? nil : GPTService(apiKey: EnvConfig.openAIKey)
     }
 
     // MARK: - Hotkey setup
@@ -121,7 +125,7 @@ class AppViewModel: ObservableObject {
 
     // MARK: - Get answer
     func getAnswer() {
-        guard primaryService != nil || fallbackService != nil else {
+        guard bedrockService != nil || openRouterService != nil || openAIService != nil else {
             statusText = "Add API key in Settings"; return
         }
         guard !transcript.isEmpty else {
@@ -166,7 +170,7 @@ class AppViewModel: ObservableObject {
 
     // MARK: - Screenshot
     func captureAndAnalyze() {
-        guard let service = primaryService ?? fallbackService else {
+        guard bedrockService != nil || openRouterService != nil || openAIService != nil else {
             statusText = "Add API key in .env"; return
         }
 
@@ -183,20 +187,19 @@ class AppViewModel: ObservableObject {
                 statusText = "Analyzing..."
                 showFiller(for: "screenshot")
 
+                let hist = followUpMode ? history : []
                 var full = ""
-                do {
-                    for try await chunk in service.streamVision(imageData: imageData, jd: jd, resume: resume, history: followUpMode ? history : []) {
-                        full += chunk
-                    }
-                } catch {
-                    if let fallback = fallbackService, service !== (primaryService as AnyObject) as? GPTService {
+
+                if let bedrock = bedrockService {
+                    do {
+                        for try await chunk in bedrock.streamVision(imageData: imageData, jd: jd, resume: resume, history: hist) { full += chunk }
+                    } catch {
                         full = ""
-                        for try await chunk in fallback.streamVision(imageData: imageData, jd: jd, resume: resume, history: followUpMode ? history : []) {
-                            full += chunk
-                        }
-                    } else {
-                        throw error
+                        statusText = "Bedrock failed, trying fallback..."
+                        full = try await visionFallback(imageData: imageData, hist: hist)
                     }
+                } else {
+                    full = try await visionFallback(imageData: imageData, hist: hist)
                 }
 
                 showFiller = false
@@ -256,30 +259,65 @@ class AppViewModel: ObservableObject {
     // MARK: - Private helpers
 
     private func collectFull() async throws -> String {
-        var full = ""
         let hist = followUpMode ? history : []
-        if let primary = primaryService {
+        var lastError: Error = URLError(.badServerResponse)
+
+        // 1. Try Bedrock (Meta Llama 3.3 70B — fastest + capable)
+        if let bedrock = bedrockService {
             do {
-                for try await chunk in primary.stream(transcript: transcript, jd: jd, resume: resume, history: hist) {
+                var full = ""
+                for try await chunk in bedrock.stream(transcript: transcript, jd: jd, resume: resume, history: hist) {
                     full += chunk
                 }
                 return full
             } catch {
-                guard let fallback = fallbackService else { throw error }
-                full = ""
-                statusText = "Retrying..."
-                for try await chunk in fallback.stream(transcript: transcript, jd: jd, resume: resume, history: hist) {
+                lastError = error
+                statusText = "Bedrock failed, trying OpenRouter..."
+            }
+        }
+
+        // 2. Try OpenRouter
+        if let openRouter = openRouterService {
+            do {
+                var full = ""
+                for try await chunk in openRouter.stream(transcript: transcript, jd: jd, resume: resume, history: hist) {
                     full += chunk
                 }
                 return full
+            } catch {
+                lastError = error
+                statusText = "OpenRouter failed, trying OpenAI..."
             }
-        } else if let fallback = fallbackService {
-            for try await chunk in fallback.stream(transcript: transcript, jd: jd, resume: resume, history: hist) {
+        }
+
+        // 3. Try OpenAI
+        if let openAI = openAIService {
+            var full = ""
+            for try await chunk in openAI.stream(transcript: transcript, jd: jd, resume: resume, history: hist) {
                 full += chunk
             }
             return full
         }
-        throw URLError(.badServerResponse)
+
+        throw lastError
+    }
+
+    private func visionFallback(imageData: Data, hist: [ConversationTurn]) async throws -> String {
+        var lastError: Error = URLError(.badServerResponse)
+
+        if let openRouter = openRouterService {
+            do {
+                var full = ""
+                for try await chunk in openRouter.streamVision(imageData: imageData, jd: jd, resume: resume, history: hist) { full += chunk }
+                return full
+            } catch { lastError = error }
+        }
+        if let openAI = openAIService {
+            var full = ""
+            for try await chunk in openAI.streamVision(imageData: imageData, jd: jd, resume: resume, history: hist) { full += chunk }
+            return full
+        }
+        throw lastError
     }
 
     // Reveal answer one line at a time with a small delay — looks natural

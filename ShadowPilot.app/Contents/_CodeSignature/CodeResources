@@ -15,24 +15,6 @@
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>MacOS/ShadowPilot.debug.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			iGkR2FM7AmnJGO6y36sCSqp7wvc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"886911d8533b0269c918eeb2dfab024aaa7bc2f7"</string>
-		</dict>
-		<key>MacOS/__preview.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			2uwoQTF+LB5fOm2eDAQjpCtDg5A=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"daec2841317e2c1e5f3a6d9e0c0423a42b438390"</string>
-		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>

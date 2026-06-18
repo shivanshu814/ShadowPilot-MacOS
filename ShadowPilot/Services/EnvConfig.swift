@@ -2,8 +2,10 @@ import Foundation
 
 struct EnvConfig {
     // Computed each time so no stale cache across rebuilds
-    static var openAIKey: String     { load("OPENAI_API_KEY") }
+    static var bedrockKey: String    { load("BEDROCK_API_KEY") }
+    static var bedrockRegion: String { let r = load("BEDROCK_REGION"); return r.isEmpty ? "us-east-1" : r }
     static var openRouterKey: String { load("OPENROUTER_API_KEY") }
+    static var openAIKey: String     { load("OPENAI_API_KEY") }
 
     private static func load(_ key: String) -> String {
         // 1. Process env (Xcode scheme)

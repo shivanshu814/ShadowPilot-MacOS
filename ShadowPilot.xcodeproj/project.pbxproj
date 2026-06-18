@@ -14,6 +14,8 @@
 		1B7D3B3A0070E97A45CC1CE9 /* MarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F49371C3A55A95AC69E7AB /* MarkdownView.swift */; };
 		2690A06CBE9725F6FC37EE6C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E8A1317EFCB23DC2618186E /* Assets.xcassets */; };
 		27EE62EC8743B3064B1BC6C6 /* GPTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E64B6D456F574501495516 /* GPTService.swift */; };
+		AA001111BBCC2222DDEE3333 /* BedrockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001111BBCC2222DDEE4444 /* BedrockService.swift */; };
+		BB001111CCDD2222EEFF3333 /* ConversationTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB001111CCDD2222EEFF4444 /* ConversationTurn.swift */; };
 		282F9409BF1DDB395CBE2FD3 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 92DA2823402CA978FE9A6AF4 /* Speech.framework */; };
 		2FF0E010C1C14362D5606417 /* ScreenCaptureKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC14EF449C62406CCF3890B9 /* ScreenCaptureKit.framework */; };
 		388A9F028975A1B654ED897A /* OverlayWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23EC70FF80E785ACAB2A922 /* OverlayWindowController.swift */; };
@@ -41,6 +43,8 @@
 		4ADC816024CD2DDA484DC17E /* AnswerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerView.swift; sourceTree = "<group>"; };
 		4E8A1317EFCB23DC2618186E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		50E64B6D456F574501495516 /* GPTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPTService.swift; sourceTree = "<group>"; };
+		AA001111BBCC2222DDEE4444 /* BedrockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedrockService.swift; sourceTree = "<group>"; };
+		BB001111CCDD2222EEFF4444 /* ConversationTurn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationTurn.swift; sourceTree = "<group>"; };
 		7433A59D9DD626C7602E6333 /* SystemAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioCapture.swift; sourceTree = "<group>"; };
 		79B4998652BCBF374D524D85 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		92DA2823402CA978FE9A6AF4 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Speech.framework; sourceTree = "<group>"; };
@@ -89,6 +93,8 @@
 			isa = PBXGroup;
 			children = (
 				A468AE1FFC40907E289B9942 /* AppViewModel.swift */,
+				AA001111BBCC2222DDEE4444 /* BedrockService.swift */,
+				BB001111CCDD2222EEFF4444 /* ConversationTurn.swift */,
 				3DEE52FE5D5331984AF2A926 /* EnvConfig.swift */,
 				50E64B6D456F574501495516 /* GPTService.swift */,
 				0B4B4926C223826A31B74A49 /* HotkeyManager.swift */,
@@ -206,6 +212,8 @@
 				F01B5546C8ECA83F32DB3D22 /* AppViewModel.swift in Sources */,
 				8CCC39CAB005D7FFBAD55348 /* ContentView.swift in Sources */,
 				73AADB8396944B7157BECEFB /* EnvConfig.swift in Sources */,
+				AA001111BBCC2222DDEE3333 /* BedrockService.swift in Sources */,
+				BB001111CCDD2222EEFF3333 /* ConversationTurn.swift in Sources */,
 				27EE62EC8743B3064B1BC6C6 /* GPTService.swift in Sources */,
 				DAFB7883DA67CE3D0862F3A6 /* HotkeyManager.swift in Sources */,
 				1B7D3B3A0070E97A45CC1CE9 /* MarkdownView.swift in Sources */,

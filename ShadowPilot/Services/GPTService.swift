@@ -145,8 +145,3 @@ Answer style:
     }
 }
 
-// MARK: - Conversation history model
-struct ConversationTurn {
-    let question: String
-    let answer: String
-}
