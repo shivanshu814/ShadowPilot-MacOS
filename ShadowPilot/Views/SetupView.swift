@@ -1,12 +1,30 @@
 import SwiftUI
 
+// Minimalist session setup — flat sections, no decoration, only what's needed.
 struct SetupView: View {
     @AppStorage("jd") var jd = ""
     @AppStorage("resume") var resume = ""
+    @AppStorage("silenceDelay") var silenceDelay: Double = 0.9
     @Binding var isSetupDone: Bool
+    @ObservedObject private var health = ProviderHealth.shared
+    @ObservedObject private var sync = NeonSync.shared
 
-    private var hasKeys: Bool {
-        !EnvConfig.openAIKey.isEmpty || !EnvConfig.openRouterKey.isEmpty
+    private var hasAnyProvider: Bool {
+        Provider.allCases.contains { p in
+            if case .ok = health.status[p] { return true }
+            if case .unknown = health.status[p] { return isConfigured(p) }
+            return false
+        }
+    }
+
+    private func isConfigured(_ p: Provider) -> Bool {
+        switch p {
+        case .groq:       return !EnvConfig.groqKey.isEmpty
+        case .cloudflare: return !EnvConfig.cloudflareAccountId.isEmpty && !EnvConfig.cloudflareToken.isEmpty
+        case .bedrock:    return !EnvConfig.bedrockKey.isEmpty
+        case .openRouter: return !EnvConfig.openRouterKey.isEmpty
+        case .openAI:     return !EnvConfig.openAIKey.isEmpty
+        }
     }
 
     var body: some View {
@@ -14,78 +32,199 @@ struct SetupView: View {
             VStack(alignment: .leading, spacing: 0) {
 
                 // Header
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.spAmber)
-                            .frame(width: 4, height: 20)
-                        Text("SHADOWPILOT")
-                            .font(.system(size: 10, weight: .black))
-                            .tracking(3)
-                            .foregroundColor(.spAmber)
+                Text("ShadowPilot")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.spAmber)
+                    .padding(.top, 40)
+                Text("Session Setup")
+                    .font(.system(size: 22, weight: .bold))
+                    .padding(.top, 2)
+
+                sectionDivider
+
+                // Providers
+                sectionHeader("Providers", trailing: retest)
+                VStack(spacing: 0) {
+                    ForEach(Provider.allCases) { p in
+                        providerRow(p)
+                        if p != Provider.allCases.last { Divider().opacity(0.08) }
                     }
-                    Text("Session Setup")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.primary)
-                    Text("Paste context so every answer is tailored to this role.")
-                        .font(.system(size: 13))
+                }
+                .padding(.top, 6)
+
+                sectionDivider
+
+                // Hands-free delay
+                sectionHeader("Silence delay", trailing: AnyView(
+                    Text(String(format: "%.1fs", silenceDelay))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundColor(.secondary)
+                ))
+                Slider(value: $silenceDelay, in: 0.3...2.0, step: 0.1)
+                    .tint(.spAmber)
+                    .padding(.top, 6)
+                Text("Pause length that auto-fires the answer in hands-free mode. Use headphones.")
+                    .font(.system(size: 10.5))
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+
+                sectionDivider
+
+                // History / sync
+                sectionHeader("History", trailing: AnyView(
+                    Button("Dashboard") { DashboardWindow.show() }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundColor(.spBlue)
+                ))
+                HStack {
+                    Toggle("Cloud backup", isOn: $sync.enabled)
+                        .toggleStyle(.switch).controlSize(.mini)
+                        .font(.system(size: 12))
+                    Spacer()
+                    Text(sync.isConfigured
+                         ? (sync.pendingCount > 0 ? "\(sync.pendingCount) pending" : "synced")
+                         : "not configured")
+                        .font(.system(size: 10.5, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
-                .padding(.bottom, 24)
+                .padding(.top, 6)
 
-                // API key status
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(hasKeys ? Color.green : Color.spRed)
-                        .frame(width: 7, height: 7)
-                    Text(hasKeys ? "API keys loaded from .env" : "No API keys — check /Applications/.env")
-                        .font(.system(size: 12))
-                        .foregroundColor(hasKeys ? .secondary : Color.spRed)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(hasKeys ? Color.primary.opacity(0.04) : Color.spRed.opacity(0.08))
-                        .overlay(RoundedRectangle(cornerRadius: 8)
-                            .stroke(hasKeys ? Color.primary.opacity(0.1) : Color.spRed.opacity(0.3), lineWidth: 1))
-                )
-                .padding(.bottom, 22)
+                sectionDivider
 
-                ContextField(label: "JOB DESCRIPTION", placeholder: "Paste the job posting here…", text: $jd, height: 120)
-                    .padding(.bottom, 14)
+                // Context
+                sectionHeader("Role context", trailing: nil)
+                ContextField(label: "Job description", placeholder: "Paste the job posting…", text: $jd, height: 84)
+                    .padding(.top, 8)
+                ContextField(label: "Resume", placeholder: "Paste your resume…", text: $resume, height: 84)
+                    .padding(.top, 10)
 
-                ContextField(label: "YOUR RESUME", placeholder: "Paste your resume here…", text: $resume, height: 120)
-                    .padding(.bottom, 26)
-
+                // CTA
                 Button(action: { isSetupDone = true }) {
-                    HStack(spacing: 8) {
-                        Text("Begin Session")
-                            .font(.system(size: 14, weight: .semibold))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .foregroundColor(hasKeys ? Color.black.opacity(0.85) : Color.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 10)
-                        .fill(hasKeys ? Color.spAmber : Color.primary.opacity(0.06)))
+                    Text("Begin Session")
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .foregroundColor(hasAnyProvider ? .black : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(RoundedRectangle(cornerRadius: 9)
+                            .fill(hasAnyProvider ? Color.spAmber : Color.primary.opacity(0.06)))
                 }
                 .buttonStyle(.plain)
-                .disabled(!hasKeys)
+                .disabled(!hasAnyProvider)
+                .padding(.top, 24)
 
-                if !hasKeys {
-                    Text("Add OPENAI_API_KEY or OPENROUTER_API_KEY to /Applications/.env and relaunch.")
+                if !hasAnyProvider {
+                    Text("Add at least one API key to ~/.shadowpilot.env, then re-test.")
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                         .padding(.top, 8)
                 }
+
+                Spacer(minLength: 24)
             }
-            .padding(28)
+            .padding(.horizontal, 28)
         }
         .background(.ultraThinMaterial)
         .frame(width: 460)
+    }
+
+    // MARK: - Building blocks
+
+    private var sectionDivider: some View {
+        Divider().opacity(0.12).padding(.vertical, 18)
+    }
+
+    private func sectionHeader(_ title: String, trailing: AnyView?) -> some View {
+        HStack {
+            Text(title.uppercased())
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(1.4)
+                .foregroundColor(.secondary)
+            Spacer()
+            if let trailing { trailing }
+        }
+    }
+
+    private var retest: AnyView {
+        AnyView(Group {
+            if health.isChecking {
+                ProgressView().controlSize(.small)
+            } else {
+                Button {
+                    Task { await health.checkAll() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Re-test all providers")
+            }
+        })
+    }
+
+    private func providerRow(_ p: Provider) -> some View {
+        let status = health.status[p] ?? .unknown
+        return HStack(spacing: 10) {
+            Circle()
+                .fill(dotColor(status))
+                .frame(width: 6, height: 6)
+            Text(p.displayName)
+                .font(.system(size: 12.5, weight: .medium))
+                .frame(width: 84, alignment: .leading)
+            Text(health.modelLabel(p))
+                .font(.system(size: 10.5, design: .monospaced))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+            statusText(p, status)
+        }
+        .padding(.vertical, 8)
+        .help(statusHelp(status))
+    }
+
+    @ViewBuilder
+    private func statusText(_ p: Provider, _ status: ProviderHealth.Status) -> some View {
+        switch status {
+        case .ok(let ms):
+            Text("\(ms)ms")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundColor(.spGreen)
+        case .failed:
+            HStack(spacing: 8) {
+                Text("failed")
+                    .font(.system(size: 11)).foregroundColor(.spRed)
+                Button("mute") { health.disable(p) }
+                    .font(.system(size: 10)).buttonStyle(.plain).foregroundColor(.secondary)
+            }
+        case .disabled:
+            Button("enable") { health.enable(p); Task { await health.checkAll() } }
+                .font(.system(size: 10)).buttonStyle(.plain).foregroundColor(.secondary)
+        case .checking:
+            ProgressView().controlSize(.mini)
+        case .notConfigured:
+            Text("no key").font(.system(size: 11)).foregroundColor(.secondary.opacity(0.6))
+        case .unknown:
+            Text(isConfigured(p) ? "—" : "no key")
+                .font(.system(size: 11)).foregroundColor(.secondary.opacity(0.6))
+        }
+    }
+
+    private func dotColor(_ s: ProviderHealth.Status) -> Color {
+        switch s {
+        case .ok:            return .spGreen
+        case .failed:        return .spRed
+        case .checking:      return .spAmber
+        case .disabled:      return .gray
+        case .notConfigured: return .gray.opacity(0.4)
+        case .unknown:       return .spSubtext
+        }
+    }
+
+    private func statusHelp(_ s: ProviderHealth.Status) -> String {
+        if case .failed(let msg) = s { return msg }
+        return ""
     }
 }
 
@@ -96,35 +235,34 @@ struct ContextField: View {
     let height: CGFloat
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(label)
-                .font(.system(size: 10, weight: .bold))
-                .tracking(1.5)
-                .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 5) {
+            Text(label.uppercased())
+                .font(.system(size: 9.5, weight: .semibold))
+                .tracking(1.2)
+                .foregroundColor(.secondary.opacity(0.8))
 
             ZStack(alignment: .topLeading) {
                 if text.isEmpty {
                     Text(placeholder)
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary.opacity(0.5))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
+                        .font(.system(size: 12.5))
+                        .foregroundColor(.secondary.opacity(0.45))
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 8)
                         .allowsHitTesting(false)
                 }
                 TextEditor(text: $text)
-                    .font(.system(size: 13))
-                    .foregroundColor(.primary)
+                    .font(.system(size: 12.5))
                     .scrollContentBackground(.hidden)
                     .background(.clear)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 4)
             }
             .frame(height: height)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.primary.opacity(0.05))
+                    .fill(Color.primary.opacity(0.04))
                     .overlay(RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1))
             )
         }
     }

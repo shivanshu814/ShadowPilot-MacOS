@@ -1,6 +1,8 @@
-
 # BlamePrompt staging (auto-generated)
 .blameprompt/
 
 .env
-build
+.env.backup
+build/
+.DS_Store
+*.app.zip

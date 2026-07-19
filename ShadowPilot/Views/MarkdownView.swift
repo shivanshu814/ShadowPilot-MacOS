@@ -1,6 +1,7 @@
 import SwiftUI
 
-// Splits markdown into text and fenced code block segments
+// Full block-level markdown: headings, bullets, numbered lists, dividers,
+// tables (monospaced), fenced code blocks, and inline bold/italic/code.
 struct MarkdownView: View {
     let text: String
 
@@ -10,7 +11,88 @@ struct MarkdownView: View {
                 if seg.isCode {
                     CodeBlockView(code: seg.content, lang: seg.lang)
                 } else if !seg.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    inlineMarkdown(seg.content)
+                    blockText(seg.content)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Block-level parsing
+
+    private enum Block {
+        case heading(Int, String)
+        case bullet(String)
+        case numbered(String, String)
+        case table(String)
+        case hr
+        case para(String)
+    }
+
+    private func blocks(_ raw: String) -> [Block] {
+        var out: [Block] = []
+        var para: [String] = []
+        func flushPara() {
+            if !para.isEmpty {
+                out.append(.para(para.joined(separator: "\n")))
+                para = []
+            }
+        }
+        for line in raw.components(separatedBy: "\n") {
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.isEmpty { flushPara(); continue }
+            if t.hasPrefix("### ") { flushPara(); out.append(.heading(3, String(t.dropFirst(4)))) }
+            else if t.hasPrefix("## ") { flushPara(); out.append(.heading(2, String(t.dropFirst(3)))) }
+            else if t.hasPrefix("# ") { flushPara(); out.append(.heading(1, String(t.dropFirst(2)))) }
+            else if t == "---" || t == "***" || t == "___" { flushPara(); out.append(.hr) }
+            else if t.hasPrefix("- ") || t.hasPrefix("* ") || t.hasPrefix("• ") {
+                flushPara(); out.append(.bullet(String(t.dropFirst(2))))
+            }
+            else if let m = t.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                flushPara(); out.append(.numbered(String(t[..<m.upperBound]).trimmingCharacters(in: .whitespaces),
+                                                 String(t[m.upperBound...])))
+            }
+            else if t.hasPrefix("|") && t.hasSuffix("|") { flushPara(); out.append(.table(t)) }
+            else { para.append(line) }
+        }
+        flushPara()
+        return out
+    }
+
+    @ViewBuilder
+    private func blockText(_ raw: String) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            ForEach(Array(blocks(raw).enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .heading(let level, let text):
+                    inline(text,
+                           size: level == 1 ? 16.5 : (level == 2 ? 15 : 13.5),
+                           weight: level == 3 ? .semibold : .bold)
+                        .padding(.top, level <= 2 ? 6 : 3)
+                case .hr:
+                    Divider().opacity(0.25).padding(.vertical, 2)
+                case .bullet(let text):
+                    HStack(alignment: .top, spacing: 7) {
+                        Text("•").font(.system(size: 13)).foregroundColor(.spAmber.opacity(0.8))
+                        inline(text, size: 13, weight: .regular)
+                    }
+                    .padding(.leading, 4)
+                case .numbered(let num, let text):
+                    HStack(alignment: .top, spacing: 7) {
+                        Text(num)
+                            .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.spAmber.opacity(0.8))
+                        inline(text, size: 13, weight: .regular)
+                    }
+                    .padding(.leading, 4)
+                case .table(let row):
+                    Text(row)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.spText)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                case .para(let text):
+                    inline(text, size: 13, weight: .regular)
                 }
             }
         }
@@ -19,21 +101,23 @@ struct MarkdownView: View {
 
     // MARK: - Inline markdown via AttributedString
     @ViewBuilder
-    private func inlineMarkdown(_ raw: String) -> some View {
+    private func inline(_ raw: String, size: CGFloat, weight: Font.Weight) -> some View {
         if let attr = try? AttributedString(markdown: raw,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) {
             Text(attr)
-                .font(.system(size: 13))
+                .font(.system(size: size, weight: weight))
                 .foregroundColor(.spText)
                 .lineSpacing(4)
                 .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)   // never truncate — always wrap full height
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             Text(raw)
-                .font(.system(size: 13))
+                .font(.system(size: size, weight: weight))
                 .foregroundColor(.spText)
                 .lineSpacing(4)
                 .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

@@ -12,6 +12,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         requestPermissions()
         setupMenuBar()
         NSApp.setActivationPolicy(.regular)
+        Task { await ProviderHealth.shared.checkAll() }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             self.showSetup()
         }
@@ -29,12 +30,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func menuBarTapped() {
         let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Open Dashboard", action: #selector(openDashboard), keyEquivalent: "d"))
         menu.addItem(NSMenuItem(title: "Open Setup", action: #selector(reopenSetup), keyEquivalent: ","))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit ShadowPilot", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
         statusItem?.menu = nil
+    }
+
+    @objc private func openDashboard() {
+        Task { @MainActor in DashboardWindow.show() }
     }
 
     @objc private func reopenSetup() {
@@ -47,7 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Setup window
     func showSetup() {
         let width: CGFloat  = 460
-        let height: CGFloat = 600
+        let height: CGFloat = 720
 
         let panel = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: width, height: height),
@@ -87,7 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Overlay pill
     func launchOverlay() {
         NSApp.setActivationPolicy(.accessory)
-        statusItem = nil
+        // Menu bar icon stays — it's the way back to Dashboard/Setup
         overlayController = OverlayWindowController()
         overlayController?.showWindow(nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

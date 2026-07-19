@@ -185,10 +185,47 @@ struct FocusableTextField: NSViewRepresentable {
     }
 }
 
+// MARK: - Answer-mode pill (single-select, detected-mode highlight)
+struct AnswerModePill: View {
+    let mode: AnswerMode
+    let isSelected: Bool
+    let isDetected: Bool     // Auto picked this mode for the last question
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(mode.label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(isSelected ? .spGreen : (isDetected ? .spAmber : .spSubtext))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.spGreenDim : (isDetected ? Color.spAmberDim : Color.primary.opacity(0.06)))
+                        .overlay(Capsule().stroke(
+                            isSelected ? Color.spGreen.opacity(0.3) : (isDetected ? Color.spAmber.opacity(0.4) : Color.clear),
+                            lineWidth: 0.5))
+                )
+        }
+        .buttonStyle(.plain)
+        .help(mode == .auto ? "Detect question type automatically" : "Force \(mode.label) mode")
+    }
+}
+
 // MARK: - Main bar
 struct SpotlightBar: View {
     @ObservedObject var vm: AppViewModel
 
+    // Tapping a different mode while an answer is on screen re-asks instantly
+    // (misclassification recovery — no re-dictation needed).
+    func selectMode(_ mode: AnswerMode) {
+        let hadAnswer = vm.showAnswer && !vm.currentQuestion.isEmpty && vm.currentQuestion != "[screenshot]"
+        if mode != vm.answerMode, mode != .auto, hadAnswer {
+            vm.reAsk(in: mode)
+        } else {
+            vm.answerMode = mode
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -267,30 +304,36 @@ struct SpotlightBar: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 13)
 
-            // Mode toggles row
+            // Answer-mode selector + feature toggles row
             HStack(spacing: 6) {
-                ModePill(label: "Follow-up", icon: "arrow.triangle.2.circlepath",
-                         color: .spGreen, isOn: $vm.followUpMode)
-                    .help("Remember conversation — gives context-aware answers")
+                ForEach(AnswerMode.allCases) { mode in
+                    AnswerModePill(mode: mode,
+                                   isSelected: vm.answerMode == mode,
+                                   isDetected: vm.answerMode == .auto && vm.detectedMode == mode && mode != .auto) {
+                        selectMode(mode)
+                    }
+                }
+
+                Spacer(minLength: 4)
 
                 ModePill(label: "Whisper", icon: "eye",
                          color: .spBlue, isOn: $vm.whisperMode)
-                    .help("Answer reveals line by line — looks natural on camera")
+                    .help("Answer reveals gradually — looks natural on camera")
 
-                ModePill(label: "Auto", icon: "waveform",
+                ModePill(label: "Hands-free", icon: "waveform",
                          color: .spAmber, isOn: $vm.autoListen)
-                    .help("Auto-fires when you stop speaking")
+                    .help("Auto-fires when the speaker pauses (\(String(format: "%.1f", vm.silenceDelay))s). Use headphones. Adjust delay in Setup.")
 
-                if vm.followUpMode && !vm.history.isEmpty {
-                    Spacer()
+                if !vm.history.isEmpty {
                     Button {
                         vm.clearHistory()
                     } label: {
-                        Text("Clear history (\(vm.history.count))")
+                        Text("↺\(vm.history.count)")
                             .font(.system(size: 9))
                             .foregroundColor(.spSubtext)
                     }
                     .buttonStyle(.plain)
+                    .help("Clear conversation memory (\(vm.history.count) turns)")
                 }
             }
             .padding(.horizontal, 18)
@@ -301,7 +344,7 @@ struct SpotlightBar: View {
 
 // MARK: - Root
 struct ContentView: View {
-    @StateObject private var vm = AppViewModel()
+    @ObservedObject private var vm = AppViewModel.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -332,6 +375,10 @@ struct ContentView: View {
         .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 10)
         .animation(.spring(response: 0.28, dampingFraction: 0.85), value: vm.showAnswer)
         .animation(.spring(response: 0.28, dampingFraction: 0.85), value: vm.showFiller)
-        .onAppear { vm.registerHotkeys() }
+        .onAppear {
+            vm.registerHotkeys()
+            NeonSync.shared.isBusy = { [weak vm] in vm?.isAnswerStreaming ?? false }
+            NeonSync.shared.start()
+        }
     }
 }

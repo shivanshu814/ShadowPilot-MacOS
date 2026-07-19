@@ -7,7 +7,7 @@ final class HotkeyManager {
 
     var onMicToggle: (() -> Void)?       // ⌘⇧L  — start/stop listening
     var onGetAnswer: (() -> Void)?       // ⌘⇧A  — fire answer
-    var onScreenshot: (() -> Void)?      // ⌘⇧S  — capture screen
+    var onScreenshot: (() -> Void)?      // ⌘⇧D  — capture screen
     var onClear: (() -> Void)?           // ⌘⇧X  — clear
     var onWritingToggle: (() -> Void)?   // ⌘⇧W  — toggle typing mode
 
@@ -52,7 +52,7 @@ final class HotkeyManager {
         // ⌘⇧A
         registerKey(keyCode: UInt32(kVK_ANSI_A),
                     modifiers: UInt32(cmdKey | shiftKey), id: 2)
-        // ⌘⇧S  (screenshot)
+        // ⌘⇧D  (screenshot)
         registerKey(keyCode: UInt32(kVK_ANSI_D),
                     modifiers: UInt32(cmdKey | shiftKey), id: 3)
         // ⌘⇧X  (clear)

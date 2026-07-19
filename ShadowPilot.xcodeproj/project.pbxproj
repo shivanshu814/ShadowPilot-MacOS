@@ -13,20 +13,25 @@
 		1A79D6EDD993FB2E2D5697B8 /* ShadowPilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47052D880ADFA27F46D73340 /* ShadowPilotApp.swift */; };
 		1B7D3B3A0070E97A45CC1CE9 /* MarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F49371C3A55A95AC69E7AB /* MarkdownView.swift */; };
 		2690A06CBE9725F6FC37EE6C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E8A1317EFCB23DC2618186E /* Assets.xcassets */; };
+		27E2CB7873A25E4EA25303D7 /* ModelRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE787A118F5C5B13F456C5E2 /* ModelRouter.swift */; };
 		27EE62EC8743B3064B1BC6C6 /* GPTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E64B6D456F574501495516 /* GPTService.swift */; };
-		AA001111BBCC2222DDEE3333 /* BedrockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001111BBCC2222DDEE4444 /* BedrockService.swift */; };
-		BB001111CCDD2222EEFF3333 /* ConversationTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB001111CCDD2222EEFF4444 /* ConversationTurn.swift */; };
 		282F9409BF1DDB395CBE2FD3 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 92DA2823402CA978FE9A6AF4 /* Speech.framework */; };
 		2FF0E010C1C14362D5606417 /* ScreenCaptureKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC14EF449C62406CCF3890B9 /* ScreenCaptureKit.framework */; };
 		388A9F028975A1B654ED897A /* OverlayWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C23EC70FF80E785ACAB2A922 /* OverlayWindowController.swift */; };
 		42D4C0F0F6DA3A9EA4FD31D3 /* SilenceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E77E6E05BE0FC92A745D357 /* SilenceDetector.swift */; };
+		4B0357380D727D1FBD7EC6B4 /* BedrockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8AAAD4D0765FE15D8B74289 /* BedrockService.swift */; };
 		5AA990CA93BF8F0C00854CC3 /* ScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8676800AA4AE8AD433401D7 /* ScreenshotCapture.swift */; };
 		73AADB8396944B7157BECEFB /* EnvConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEE52FE5D5331984AF2A926 /* EnvConfig.swift */; };
+		8848228B8100520E9F9EDE97 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E736887ED93B9A8892C53152 /* HistoryView.swift */; };
+		88C5ACA413E6F0DB3C2814C9 /* ConversationTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC8EC72A0B7356F4983995A /* ConversationTurn.swift */; };
 		8CCC39CAB005D7FFBAD55348 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CE481C24D3866F924580ACD /* ContentView.swift */; };
 		921E47ECEE25DD9A8CCA9C04 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118A3B88ABBDD279096A328E /* SetupView.swift */; };
 		A4971CA4EE9D23D0D9A9EC75 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4843C856864876A7D6AB1BFE /* AVFoundation.framework */; };
 		C647F642048B028FA62783C6 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7F7450692F8F480DFC1F31 /* SpeechRecognizer.swift */; };
+		D0D01482905695DB65C275E6 /* ProviderHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429F9A7BAEB0325C0BD153B3 /* ProviderHealth.swift */; };
 		DAFB7883DA67CE3D0862F3A6 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4B4926C223826A31B74A49 /* HotkeyManager.swift */; };
+		DC1A2C3CBD48232CF638FE6D /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B2B472417B1C23E7009A2E /* SessionStore.swift */; };
+		E09A5B56ECA60133BEA1A07E /* NeonSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5B440CFB283E0592CF46B0 /* NeonSync.swift */; };
 		F01B5546C8ECA83F32DB3D22 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A468AE1FFC40907E289B9942 /* AppViewModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -38,22 +43,27 @@
 		1E77E6E05BE0FC92A745D357 /* SilenceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilenceDetector.swift; sourceTree = "<group>"; };
 		3CE481C24D3866F924580ACD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3DEE52FE5D5331984AF2A926 /* EnvConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvConfig.swift; sourceTree = "<group>"; };
+		429F9A7BAEB0325C0BD153B3 /* ProviderHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHealth.swift; sourceTree = "<group>"; };
 		47052D880ADFA27F46D73340 /* ShadowPilotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowPilotApp.swift; sourceTree = "<group>"; };
 		4843C856864876A7D6AB1BFE /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AVFoundation.framework; sourceTree = "<group>"; };
 		4ADC816024CD2DDA484DC17E /* AnswerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerView.swift; sourceTree = "<group>"; };
 		4E8A1317EFCB23DC2618186E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		50E64B6D456F574501495516 /* GPTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPTService.swift; sourceTree = "<group>"; };
-		AA001111BBCC2222DDEE4444 /* BedrockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedrockService.swift; sourceTree = "<group>"; };
-		BB001111CCDD2222EEFF4444 /* ConversationTurn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationTurn.swift; sourceTree = "<group>"; };
+		5E5B440CFB283E0592CF46B0 /* NeonSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeonSync.swift; sourceTree = "<group>"; };
 		7433A59D9DD626C7602E6333 /* SystemAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioCapture.swift; sourceTree = "<group>"; };
 		79B4998652BCBF374D524D85 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		7AC8EC72A0B7356F4983995A /* ConversationTurn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationTurn.swift; sourceTree = "<group>"; };
 		92DA2823402CA978FE9A6AF4 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Speech.framework; sourceTree = "<group>"; };
 		9FB6E9303C66E7F74705DC02 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A18162C755B33EE6080BC911 /* ShadowPilot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShadowPilot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A468AE1FFC40907E289B9942 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		A8676800AA4AE8AD433401D7 /* ScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCapture.swift; sourceTree = "<group>"; };
+		A8AAAD4D0765FE15D8B74289 /* BedrockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedrockService.swift; sourceTree = "<group>"; };
 		C23EC70FF80E785ACAB2A922 /* OverlayWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowController.swift; sourceTree = "<group>"; };
+		E736887ED93B9A8892C53152 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		EC14EF449C62406CCF3890B9 /* ScreenCaptureKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ScreenCaptureKit.framework; sourceTree = "<group>"; };
+		F9B2B472417B1C23E7009A2E /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		FE787A118F5C5B13F456C5E2 /* ModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelRouter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,12 +103,16 @@
 			isa = PBXGroup;
 			children = (
 				A468AE1FFC40907E289B9942 /* AppViewModel.swift */,
-				AA001111BBCC2222DDEE4444 /* BedrockService.swift */,
-				BB001111CCDD2222EEFF4444 /* ConversationTurn.swift */,
+				A8AAAD4D0765FE15D8B74289 /* BedrockService.swift */,
+				7AC8EC72A0B7356F4983995A /* ConversationTurn.swift */,
 				3DEE52FE5D5331984AF2A926 /* EnvConfig.swift */,
 				50E64B6D456F574501495516 /* GPTService.swift */,
 				0B4B4926C223826A31B74A49 /* HotkeyManager.swift */,
+				FE787A118F5C5B13F456C5E2 /* ModelRouter.swift */,
+				5E5B440CFB283E0592CF46B0 /* NeonSync.swift */,
+				429F9A7BAEB0325C0BD153B3 /* ProviderHealth.swift */,
 				A8676800AA4AE8AD433401D7 /* ScreenshotCapture.swift */,
+				F9B2B472417B1C23E7009A2E /* SessionStore.swift */,
 				1E77E6E05BE0FC92A745D357 /* SilenceDetector.swift */,
 				1D7F7450692F8F480DFC1F31 /* SpeechRecognizer.swift */,
 				7433A59D9DD626C7602E6333 /* SystemAudioCapture.swift */,
@@ -133,6 +147,7 @@
 			children = (
 				4ADC816024CD2DDA484DC17E /* AnswerView.swift */,
 				3CE481C24D3866F924580ACD /* ContentView.swift */,
+				E736887ED93B9A8892C53152 /* HistoryView.swift */,
 				07F49371C3A55A95AC69E7AB /* MarkdownView.swift */,
 				118A3B88ABBDD279096A328E /* SetupView.swift */,
 			);
@@ -210,15 +225,20 @@
 				0043F4C3C4EAEA88EC8C53DF /* AnswerView.swift in Sources */,
 				0A0B327DA94830BB8990A7CD /* AppDelegate.swift in Sources */,
 				F01B5546C8ECA83F32DB3D22 /* AppViewModel.swift in Sources */,
+				4B0357380D727D1FBD7EC6B4 /* BedrockService.swift in Sources */,
 				8CCC39CAB005D7FFBAD55348 /* ContentView.swift in Sources */,
+				88C5ACA413E6F0DB3C2814C9 /* ConversationTurn.swift in Sources */,
 				73AADB8396944B7157BECEFB /* EnvConfig.swift in Sources */,
-				AA001111BBCC2222DDEE3333 /* BedrockService.swift in Sources */,
-				BB001111CCDD2222EEFF3333 /* ConversationTurn.swift in Sources */,
 				27EE62EC8743B3064B1BC6C6 /* GPTService.swift in Sources */,
+				8848228B8100520E9F9EDE97 /* HistoryView.swift in Sources */,
 				DAFB7883DA67CE3D0862F3A6 /* HotkeyManager.swift in Sources */,
 				1B7D3B3A0070E97A45CC1CE9 /* MarkdownView.swift in Sources */,
+				27E2CB7873A25E4EA25303D7 /* ModelRouter.swift in Sources */,
+				E09A5B56ECA60133BEA1A07E /* NeonSync.swift in Sources */,
 				388A9F028975A1B654ED897A /* OverlayWindowController.swift in Sources */,
+				D0D01482905695DB65C275E6 /* ProviderHealth.swift in Sources */,
 				5AA990CA93BF8F0C00854CC3 /* ScreenshotCapture.swift in Sources */,
+				DC1A2C3CBD48232CF638FE6D /* SessionStore.swift in Sources */,
 				921E47ECEE25DD9A8CCA9C04 /* SetupView.swift in Sources */,
 				1A79D6EDD993FB2E2D5697B8 /* ShadowPilotApp.swift in Sources */,
 				42D4C0F0F6DA3A9EA4FD31D3 /* SilenceDetector.swift in Sources */,

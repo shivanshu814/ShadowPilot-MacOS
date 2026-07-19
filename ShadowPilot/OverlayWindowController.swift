@@ -12,25 +12,13 @@ class OverlayWindow: NSWindow {
     override var canBecomeMain: Bool { false }
 
     func focusTextField() {
-        NSLog("[SP] focusTextField called")
-        NSLog("[SP] activationPolicy before: %d", NSApp.activationPolicy().rawValue)
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         makeKeyAndOrderFront(nil)
-        NSLog("[SP] isKeyWindow after makeKey: %d", self.isKeyWindow ? 1 : 0)
-        NSLog("[SP] canBecomeKey: %d", self.canBecomeKey ? 1 : 0)
-        NSLog("[SP] TextFieldRef.field nil: %d", TextFieldRef.shared.field == nil ? 1 : 0)
+        // Field may not be in the responder chain until the window is key
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self else { return }
-            NSLog("[SP] 100ms — isKeyWindow: %d", self.isKeyWindow ? 1 : 0)
-            if let field = TextFieldRef.shared.field {
-                NSLog("[SP] field found, has window: %d", field.window != nil ? 1 : 0)
-                let result = self.makeFirstResponder(field)
-                NSLog("[SP] makeFirstResponder result: %d", result ? 1 : 0)
-                NSLog("[SP] firstResponder class: %@", self.firstResponder?.className ?? "nil")
-            } else {
-                NSLog("[SP] ERROR: TextFieldRef.field is nil!")
-            }
+            guard let self, let field = TextFieldRef.shared.field else { return }
+            self.makeFirstResponder(field)
         }
     }
 
@@ -46,6 +34,12 @@ class AcceptsFirstMouseHostingView<R: View>: NSHostingView<R> {
 }
 
 class OverlayWindowController: NSWindowController {
+    private var resizeObserver: NSObjectProtocol?
+
+    deinit {
+        if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
+    }
+
     convenience init() {
         let window = OverlayWindow(
             contentRect: NSRect(x: 0, y: 0, width: 700, height: 52),
@@ -75,7 +69,7 @@ class OverlayWindowController: NSWindowController {
         }
 
         // Auto-resize height to content
-        NotificationCenter.default.addObserver(
+        resizeObserver = NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: hostingView,
             queue: .main

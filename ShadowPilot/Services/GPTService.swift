@@ -1,9 +1,16 @@
 import Foundation
 
+// Appended when a stream ends on finish_reason "length" — AppViewModel detects
+// this and auto-continues the answer until it's complete.
+let kTruncationMarker = "⟨…truncated⟩"
+
+// Any OpenAI-compatible chat-completions endpoint: OpenAI, OpenRouter, Groq,
+// Cloudflare Workers AI. System prompt, model, and max_tokens are supplied
+// per call by ModelRouter.
 class GPTService {
-    private let apiKey: String
-    private let baseURL: String
-    private let model: String
+    let apiKey: String
+    let baseURL: String
+    let model: String
 
     init(apiKey: String, baseURL: String = "https://api.openai.com/v1", model: String = "gpt-4o") {
         self.apiKey = apiKey
@@ -11,65 +18,27 @@ class GPTService {
         self.model = model
     }
 
-    // MARK: - Audio transcript answer (with conversation history for follow-up mode)
-    func stream(transcript: String, jd: String, resume: String,
-                history: [ConversationTurn] = []) -> AsyncThrowingStream<String, Error> {
-
-        var messages: [[String: Any]] = [
-            ["role": "system", "content": systemPrompt(jd: jd, resume: resume)]
-        ]
-
-        // inject prior turns for follow-up context (last 6 turns max)
-        for turn in history.suffix(6) {
+    // MARK: - Text streaming
+    func stream(system: String, userText: String, history: [ConversationTurn],
+                maxTokens: Int) -> AsyncThrowingStream<String, Error> {
+        var messages: [[String: Any]] = [["role": "system", "content": system]]
+        for turn in history {
             messages.append(["role": "user",      "content": turn.question])
             messages.append(["role": "assistant", "content": turn.answer])
         }
-
-        let userContent = "Interview question:\n\(transcript)"
-        messages.append(["role": "user", "content": userContent])
-
-        return streamMessages(messages)
+        messages.append(["role": "user", "content": userText])
+        return streamMessages(messages, maxTokens: maxTokens)
     }
 
-    // MARK: - Screenshot / vision analysis
-    func streamVision(imageData: Data, jd: String, resume: String,
-                      history: [ConversationTurn] = []) -> AsyncThrowingStream<String, Error> {
+    // MARK: - Vision streaming
+    func streamVision(system: String, prompt: String, imageData: Data,
+                      history: [ConversationTurn], maxTokens: Int) -> AsyncThrowingStream<String, Error> {
         let base64 = imageData.base64EncodedString()
-
-        var messages: [[String: Any]] = [
-            ["role": "system", "content": """
-You are ShadowPilot, a Principal Engineer with 15+ years of experience. Analyze the screenshot and answer as the candidate (first person).
-Use the resume and job description context to make answers personal and specific.
-Respond in clean markdown. For code problems: correct solution first with fenced code blocks, then O(n) complexity note.
-Speak with the confidence of someone who has solved this problem before.
-"""]
-        ]
-
-        for turn in history.suffix(4) {
+        var messages: [[String: Any]] = [["role": "system", "content": system]]
+        for turn in history {
             messages.append(["role": "user",      "content": turn.question])
             messages.append(["role": "assistant", "content": turn.answer])
         }
-
-        var prompt = """
-        Analyze this screenshot carefully.
-
-        If it contains a **coding problem or algorithm question**:
-        - Provide a complete, correct solution
-        - Use proper markdown code blocks with the language tag (e.g. ```python)
-        - Add brief inline comments for clarity
-        - Then give a short time/space complexity note
-
-        If it contains a **system design or conceptual question**:
-        - Give a structured markdown answer with headings and bullets
-
-        If it contains a **multiple choice or quiz question**:
-        - State the correct answer clearly, then explain why
-
-        Otherwise describe what you see and how to answer it.
-        """
-        if !jd.isEmpty     { prompt += "\n\nJob Description context:\n\(jd)" }
-        if !resume.isEmpty { prompt += "\n\nCandidate Resume:\n\(resume)" }
-
         messages.append([
             "role": "user",
             "content": [
@@ -78,18 +47,41 @@ Speak with the confidence of someone who has solved this problem before.
                 ["type": "text", "text": prompt]
             ]
         ])
+        return streamMessages(messages, maxTokens: maxTokens)
+    }
 
-        return streamMessages(messages)
+    // MARK: - Non-streaming health probe (max_tokens: 1)
+    func probe() async throws {
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": 1,
+            "messages": [["role": "user", "content": "hi"]],
+        ]
+        var request = URLRequest(url: URL(string: "\(baseURL)/chat/completions")!)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 8
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            let msg = String(data: data, encoding: .utf8)?.prefix(120) ?? "unknown"
+            throw NSError(domain: "GPTService", code: code,
+                          userInfo: [NSLocalizedDescriptionKey: "HTTP \(code): \(msg)"])
+        }
     }
 
     // MARK: - Shared streaming core
-    private func streamMessages(_ messages: [[String: Any]]) -> AsyncThrowingStream<String, Error> {
+    private func streamMessages(_ messages: [[String: Any]], maxTokens: Int) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
-            Task {
+            let task = Task {
                 do {
                     let body: [String: Any] = [
                         "model":  self.model,
                         "stream": true,
+                        "max_tokens": maxTokens,
                         "messages": messages,
                     ]
 
@@ -99,49 +91,38 @@ Speak with the confidence of someone who has solved this problem before.
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-                    let (bytes, _) = try await URLSession.shared.bytes(for: request)
+                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
+                    if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                        var errBody = ""
+                        for try await line in bytes.lines { errBody += line; if errBody.count > 300 { break } }
+                        throw NSError(domain: "GPTService", code: http.statusCode,
+                                      userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errBody.prefix(200))"])
+                    }
+
+                    var truncated = false
                     for try await line in bytes.lines {
+                        try Task.checkCancellation()
                         guard line.hasPrefix("data: "), line != "data: [DONE]" else { continue }
                         let json = String(line.dropFirst(6))
-                        if let data = json.data(using: .utf8),
-                           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                           let choices = obj["choices"] as? [[String: Any]],
-                           let delta = choices.first?["delta"] as? [String: Any],
+                        guard let data = json.data(using: .utf8),
+                              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                              let choices = obj["choices"] as? [[String: Any]],
+                              let first = choices.first else { continue }
+                        if let delta = first["delta"] as? [String: Any],
                            let text = delta["content"] as? String {
                             continuation.yield(text)
                         }
+                        if first["finish_reason"] as? String == "length" { truncated = true }
                     }
+                    // A mid-sentence cutoff must never be mistaken for a complete answer
+                    if truncated { continuation.yield(kTruncationMarker) }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
                 }
             }
+            continuation.onTermination = { _ in task.cancel() }
         }
     }
-
-    private func systemPrompt(jd: String, resume: String) -> String {
-        var s = """
-You are ShadowPilot, an invisible interview co-pilot acting as a Principal Engineer with 15+ years of experience based in the United States.
-
-ALWAYS answer as if YOU are the candidate — first person, confident, authoritative.
-Use natural American English — contractions (I've, we'd, that's), American idioms, and a casual-professional tone like a senior engineer at a top US tech company.
-Avoid British spellings or overly formal phrasing. Sound like a native American speaker.
-
-Draw directly from the resume and job description provided. If resume mentions specific technologies, projects, or achievements, weave them naturally into answers.
-
-Answer style:
-- Think and respond like a Principal Engineer: system-level thinking, trade-offs, impact at scale
-- Lead with the most impressive/relevant point first
-- Use concise markdown bullets — readable at a glance during a live call
-- For technical questions: give the correct answer first, then brief explanation
-- For behavioral (STAR): Situation (1 line) → Action (2-3 lines) → Result (metric if possible)
-- Never say "I think" or "maybe" — speak with conviction
-- Keep total response under 150 words unless it's a coding question
-"""
-        if !jd.isEmpty     { s += "\n\nJob Description:\n\(jd)" }
-        if !resume.isEmpty { s += "\n\nResume:\n\(resume)" }
-        return s
-    }
 }
-

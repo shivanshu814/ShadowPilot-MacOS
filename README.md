@@ -23,13 +23,16 @@
 | Feature | Description |
 |---|---|
 | 🎙️ **Live Transcription** | Captures system audio (meeting apps) and transcribes in real-time using Apple's `Speech` framework |
-| 🤖 **Multi-Provider AI** | Falls back gracefully: **AWS Bedrock** (Llama 3.3 70B) → **OpenRouter** (GPT-4o) → **OpenAI** (GPT-4o) |
-| 📸 **Screenshot Analysis** | One-click screen capture + vision AI to solve coding problems, diagrams, and visual questions |
+| 🧠 **Smart Model Routing** | Auto-detects question type — Q&A → **Groq** (fastest), Code Review/Coding → **Claude Sonnet 4.5**, System Design → **GPT-4o** — with manual override pills |
+| 🏁 **Hedged Racing** | Q&A questions fire the two fastest providers in parallel — first token wins, loser cancelled |
+| 📸 **Screenshot Analysis** | One-click screen capture + Claude Sonnet vision — approach first, then fully-commented code |
 | 🪟 **Invisible Overlay** | Glassmorphic floating pill that stays on top of all windows — undetectable in screen shares |
 | ⌨️ **Global Hotkeys** | Control everything without switching apps — no suspicious alt-tabs |
-| 💬 **Follow-up Mode** | Maintains conversation history for context-aware multi-turn answers |
-| 👁️ **Whisper Mode** | Answer reveals line-by-line, mimicking natural reading speed on camera |
-| ⚡ **Auto-Listen** | Detects silence and automatically triggers AI — fully hands-free |
+| 💬 **Conversation Memory** | Always-on rolling history — follow-ups inherit context AND mode ("now add multi-region" answers only the delta) |
+| 👁️ **Whisper Mode** | Answer reveals gradually, mimicking natural reading speed on camera |
+| ⚡ **Hands-free Mode** | Silence-triggered answers with continuous listening — follow-ups spoken mid-answer are never missed. **Headphones required** (speaker audio can self-trigger it) |
+| 🩺 **Provider Health Check** | Every provider tested at launch with live latency — dead providers auto-excluded from routing |
+| 🗂️ **Session History** | Every Q&A logged to local SQLite with optional Neon cloud backup — searchable, exportable as Markdown |
 | 🎯 **Session Context** | Paste the job description + your resume so every answer is role-specific |
 | 🗣️ **Filler Phrases** | Shows natural filler text instantly while AI thinks — no awkward pauses |
 
@@ -84,15 +87,23 @@ cp .env.example .env
 Open `.env` and fill in at least one API key:
 
 ```env
-# AWS Bedrock (fastest — Llama 3.3 70B)
-BEDROCK_API_KEY=your_bedrock_key_here
-BEDROCK_REGION=us-east-1
+# Groq (fastest — primary for Q&A)
+GROQ_API_KEY=gsk_...
 
-# OpenRouter (GPT-4o via proxy)
+# OpenRouter (Claude Sonnet 4.5 — review/design/coding)
 OPENROUTER_API_KEY=sk-or-v1-...
 
-# OpenAI (direct)
+# OpenAI (GPT-4o — system design)
 OPENAI_API_KEY=sk-...
+
+# Optional fallbacks
+BEDROCK_API_KEY=...
+BEDROCK_REGION=us-east-1
+ACCOUNT_ID=...      # Cloudflare Workers AI
+API_TOKEN=...       # Cloudflare Workers AI
+
+# Optional cloud backup of session history
+NEON_DATABASE_URL=postgresql://...
 ```
 
 > **Tip:** The app searches for `.env` in multiple locations:  
@@ -205,19 +216,18 @@ ShadowPilot-macOS/
 
 ---
 
-## 🔑 API Key Priority
+## 🔑 Model Routing
 
-The app uses a **waterfall fallback** strategy:
+Every question is routed to the **fastest model that is still correct for that question type**:
 
-```
-1. AWS Bedrock  (Meta Llama 3.3 70B — fastest, cheapest)
-       ↓ fails
-2. OpenRouter   (GPT-4o via proxy)
-       ↓ fails
-3. OpenAI       (GPT-4o direct)
-```
+| Question type | Primary model | Fallbacks |
+|---|---|---|
+| Interview Q&A | Groq Llama 3.3 70B (raced vs Cloudflare) | Bedrock → OpenAI → OpenRouter |
+| Code Review / PR | OpenRouter Claude Sonnet 4.5 | OpenAI GPT-4o → others |
+| System Design | OpenAI GPT-4o | OpenRouter Sonnet → others |
+| Coding (screenshot) | OpenRouter Claude Sonnet 4.5 (vision) | OpenAI GPT-4o |
 
-You only need **one** working key. Bedrock is recommended for lowest latency.
+You only need **one** working key — the router skips unconfigured/unhealthy providers. **Groq is strongly recommended** for Q&A speed (~300ms first token). Model IDs are overridable via `.env` (see `.env.example`).
 
 ---
 
