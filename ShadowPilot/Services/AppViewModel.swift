@@ -69,6 +69,9 @@ class AppViewModel: ObservableObject {
     @AppStorage("jd") private var jd = ""
     @AppStorage("resume") private var resume = ""
     @AppStorage("silenceDelay") var silenceDelay: Double = 0.9
+    @AppStorage("accentPreset") private var accentPreset = AccentPreset.indian.rawValue
+    @AppStorage("styleSample") private var styleSample = ""
+    @AppStorage("customAccent") private var customAccent = ""
 
     private let audioCapture = SystemAudioCapture()
     private let speechRecognizer = SpeechRecognizer()
@@ -190,7 +193,9 @@ class AppViewModel: ObservableObject {
 
         currentAnswerTask = Task {
             do {
-                let system = ModelRouter.systemPrompt(for: mode, jd: jd, resume: resume)
+                let system = ModelRouter.systemPrompt(for: mode, jd: jd, resume: resume,
+                                                      accent: accentPreset, styleSample: styleSample,
+                                                      customAccent: customAccent)
                 let full = try await runChain(chain, mode: mode, userText: q, system: system,
                                               onChunk: liveChunkHandler())
                 finishAnswerUI()
@@ -391,7 +396,9 @@ class AppViewModel: ObservableObject {
                 statusText = "Analyzing..."
                 presentFiller()
 
-                let system = ModelRouter.systemPrompt(for: .coding, jd: jd, resume: resume)
+                let system = ModelRouter.systemPrompt(for: .coding, jd: jd, resume: resume,
+                                                      accent: accentPreset, styleSample: styleSample,
+                                                      customAccent: customAccent)
                 let prompt = ModelRouter.visionPrompt(jd: "", resume: "")
                 let hist = history
                 let onChunk = liveChunkHandler()

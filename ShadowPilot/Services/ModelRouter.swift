@@ -43,6 +43,58 @@ enum AnswerMode: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Accent / speaking-style presets
+
+// The answer is read aloud BY the user, so it must sound natural in THEIR
+// English — accent preset sets the dialect, styleSample captures their voice.
+enum AccentPreset: String, CaseIterable, Identifiable {
+    case indian, neutral, american, british, custom
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .indian:   return "Indian"
+        case .neutral:  return "Neutral"
+        case .american: return "US"
+        case .british:  return "UK"
+        case .custom:   return "Custom"
+        }
+    }
+
+    // Locale for transcribing the user's own voice — matching the accent
+    // makes Apple Speech far more accurate.
+    var speechLocale: String {
+        switch self {
+        case .indian:   return "en-IN"
+        case .neutral:  return "en-US"
+        case .american: return "en-US"
+        case .british:  return "en-GB"
+        case .custom:   return "en-US"
+        }
+    }
+
+    // customDescription is the user's own words describing how THEY speak —
+    // only used by the .custom case; presets ignore it.
+    func promptDescription(customDescription: String) -> String {
+        switch self {
+        case .indian:
+            return "I speak Indian English — the natural, fluent English of a professional engineer working in India. Use phrasing, connectors and vocabulary that sound native to Indian English (\"basically\", \"so what happens is\", \"the thing is\"), and avoid distinctly American slang or idioms I would never say (\"ballpark\", \"touch base\", \"y'all\", \"gonna\"). Keep it professional — natural accent, not caricature."
+        case .neutral:
+            return "I speak neutral international English. Avoid region-specific slang and idioms entirely — plain, globally natural phrasing."
+        case .american:
+            return "I speak American English. Natural US phrasing and idioms are fine."
+        case .british:
+            return "I speak British English. Use British phrasing, vocabulary and spelling (organise, whilst is fine sparingly), and avoid Americanisms."
+        case .custom:
+            let desc = customDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !desc.isEmpty else {
+                return "I speak neutral international English. Avoid region-specific slang and idioms entirely."
+            }
+            return "Here is how I speak English, in my own words — follow this exactly when writing my answers:\n\(desc)"
+        }
+    }
+}
+
 // MARK: - Model config (SINGLE source of truth for every model id)
 
 struct ModelConfig {
@@ -227,8 +279,37 @@ You are answering AS the candidate — a principal-level engineer with 10+ years
 If the question is a follow-up modifying or querying your previous answer (visible in the conversation history), respond INCREMENTALLY — address only the change or the specific part asked about. Do NOT restate or regenerate the full design/review. E.g. "now add multi-region" → describe only what changes in the existing design.
 """
 
-    static func systemPrompt(for mode: AnswerMode, jd: String, resume: String) -> String {
-        var s = persona + "\n\n"
+    // Injected right after the persona — the accent/style shapes EVERY spoken word,
+    // so it must come before mode instructions and context.
+    static func speakingStyleBlock(accent: String, styleSample: String, customAccent: String) -> String {
+        guard let preset = AccentPreset(rawValue: accent) else { return "" }
+        var s = """
+
+
+MY SPEAKING STYLE — I will read your answer aloud in my own voice, so it must sound like ME, not like a generic AI:
+- \(preset.promptDescription(customDescription: customAccent))
+"""
+        let sample = styleSample.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sample.isEmpty {
+            // Cap the sample so it never crowds out JD/resume in the context budget
+            let capped = sample.count > 1500 ? String(sample.prefix(1500)) + "…" : sample
+            s += """
+
+- Below is a real transcript of me speaking. Study it and mirror MY voice: my typical sentence length and rhythm, my word choices, my connector words and habits, how I start and wrap up a thought. Mimic ONLY the style — never reuse its content or facts unless the question is actually about them.
+--- MY VOICE SAMPLE ---
+\(capped)
+--- END SAMPLE ---
+"""
+        }
+        return s
+    }
+
+    static func systemPrompt(for mode: AnswerMode, jd: String, resume: String,
+                             accent: String = "", styleSample: String = "",
+                             customAccent: String = "") -> String {
+        var s = persona
+        s += speakingStyleBlock(accent: accent, styleSample: styleSample, customAccent: customAccent)
+        s += "\n\n"
         switch mode {
         case .interview, .auto:
             s += """

@@ -5,9 +5,14 @@ struct SetupView: View {
     @AppStorage("jd") var jd = ""
     @AppStorage("resume") var resume = ""
     @AppStorage("silenceDelay") var silenceDelay: Double = 0.9
+    @AppStorage("accentPreset") var accentPreset = AccentPreset.indian.rawValue
+    @AppStorage("styleSample") var styleSample = ""
+    @AppStorage("customAccent") var customAccent = ""
     @Binding var isSetupDone: Bool
     @ObservedObject private var health = ProviderHealth.shared
     @ObservedObject private var sync = NeonSync.shared
+    @StateObject private var styleRecorder = StyleRecorder()
+    @State private var sampleBeforeRecording = ""
 
     private var hasAnyProvider: Bool {
         Provider.allCases.contains { p in
@@ -99,6 +104,35 @@ struct SetupView: View {
                 ContextField(label: "Resume", placeholder: "Paste your resume…", text: $resume, height: 84)
                     .padding(.top, 10)
 
+                sectionDivider
+
+                // Speaking style — answers are written in the user's own English accent/voice
+                sectionHeader("Speaking style", trailing: recordButton)
+                Picker("", selection: $accentPreset) {
+                    ForEach(AccentPreset.allCases) { p in
+                        Text(p.label).tag(p.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.top, 8)
+                if accentPreset == AccentPreset.custom.rawValue {
+                    ContextField(label: "My accent, in my own words",
+                                 placeholder: "e.g. I'm from Hyderabad — I mix in a bit of Hindi rhythm, say 'actually' and 'itself' a lot, keep sentences short…",
+                                 text: $customAccent, height: 64)
+                        .padding(.top, 10)
+                }
+                ContextField(label: "How I speak (voice sample)",
+                             placeholder: "Tap Record and talk for 30–60s about your work — or paste a transcript of you speaking English…",
+                             text: $styleSample, height: 84)
+                    .padding(.top, 10)
+                Text(styleRecorder.isRecording
+                     ? "Recording from mic — speak naturally, then tap Stop."
+                     : "Answers get written in your accent and phrasing, so they sound like you when read aloud.")
+                    .font(.system(size: 10.5))
+                    .foregroundColor(styleRecorder.isRecording ? .spRed : .secondary)
+                    .padding(.top, 4)
+
                 // CTA
                 Button(action: { isSetupDone = true }) {
                     Text("Begin Session")
@@ -126,6 +160,34 @@ struct SetupView: View {
         }
         .background(.ultraThinMaterial)
         .frame(width: 460)
+        .onReceive(styleRecorder.$liveText) { text in
+            guard styleRecorder.isRecording, !text.isEmpty else { return }
+            styleSample = sampleBeforeRecording.isEmpty
+                ? text
+                : sampleBeforeRecording + " " + text
+        }
+    }
+
+    private var recordButton: AnyView {
+        AnyView(Button {
+            if styleRecorder.isRecording {
+                styleRecorder.stop()
+            } else {
+                sampleBeforeRecording = styleSample.trimmingCharacters(in: .whitespacesAndNewlines)
+                let preset = AccentPreset(rawValue: accentPreset) ?? .neutral
+                styleRecorder.start(locale: preset.speechLocale)
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: styleRecorder.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                    .font(.system(size: 11, weight: .medium))
+                Text(styleRecorder.isRecording ? "Stop" : "Record")
+                    .font(.system(size: 11.5, weight: .medium))
+            }
+            .foregroundColor(styleRecorder.isRecording ? .spRed : .spBlue)
+        }
+        .buttonStyle(.plain)
+        .help("Record your own voice — the transcript teaches the AI how you speak"))
     }
 
     // MARK: - Building blocks
