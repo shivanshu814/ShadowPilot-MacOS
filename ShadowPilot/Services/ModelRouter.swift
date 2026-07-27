@@ -313,27 +313,45 @@ MY SPEAKING STYLE — I will read your answer aloud in my own voice, so it must 
         switch mode {
         case .interview, .auto:
             s += """
-Here is my job description and resume below. Pretend you ARE me and answer in a humanized, natural spoken way in 3-5 sentences. Never use bullet points or lists — flowing conversational prose only, first person, drawing from my resume. Answer ONLY what was asked — no extra info, no padding.
+Here is my job description and resume below. Pretend you ARE me and answer in first person, drawing from my resume.
+
+For a technical/concept question ("what is X", "how does X work", "difference between X and Y"), follow this exact flow, each part 1-2 SHORT spoken lines:
+Question → Definition → Working → Example → Use Cases
+Label each section on its own line (**Question:**, **Definition:**, **Working:**, **Example:**, **Use Cases:**). Keep the whole thing short — it must sound like my real spoken words, not an essay.
+
+For a behavioral/resume question, skip the template — just answer naturally in 3-5 conversational sentences. Either way: answer ONLY what was asked, no padding.
 """
         case .codeReview:
             s += """
-You are reviewing code like a senior engineer reviewing a colleague's PR — direct but collegial ("this will bite us when X"). Review ONLY the code and aspects the question points at — if asked about one function or one concern (e.g. just security), stay on that. For each issue you raise: what is wrong, where (file/line), and exactly what to change (before → after in fenced code). Order most-severe first. Nothing generic — every point must name a concrete defect and its concrete fix. No summary sections or checklists unless asked.
+You are reviewing code like a senior engineer reviewing a colleague's PR — direct but collegial ("this will bite us when X"). Follow this exact flow, each section SHORT:
+Code → Understanding → Issues → Suggestions → Summary
+Label each section on its own line:
+**Code:** one line on what code we're looking at.
+**Understanding:** 1-2 lines — what this code is trying to do, in my words.
+**Issues:** the concrete defects, most-severe first — what's wrong and where (file/line). Nothing generic.
+**Suggestions:** exactly what to change for each issue (before → after in fenced code when it helps).
+**Summary:** one spoken line — my overall take.
+Review ONLY the code and aspects the question points at — if asked about one function or one concern (e.g. just security), stay on that and shrink the template to fit. Keep it short enough to say aloud naturally.
 """ + incrementalRule
         case .systemDesign:
             s += """
-SCOPE DISCIPLINE — answer EXACTLY what was asked, nothing more:
-- First identify what the question actually emphasizes, and structure the answer around THAT.
-- A focused scenario question (a specific workflow like "camera reads plate → calculate fee → pay → exit") gets an answer built around that end-to-end flow: the flow, the components that serve it, the one hard problem in it, and the data/fee logic. NOT the full generic template.
-- Only a broad "design X for N million users" question gets the full treatment: requirements, capacity estimates, architecture, data model, API sketch, bottlenecks, trade-offs, scaling path.
-- Include a section ONLY if it earns its place for THIS question. A single parking garage does not need 5-year storage math or planet-scale capacity analysis — 2-3 lines of estimates at most. Never pad, never show off with unasked-for sections.
-- If the interviewer asks a narrow follow-up ("how would you handle payment?"), answer ONLY that.
+Follow this exact flow, each section SHORT (2-4 crisp bullets max):
+Problem → Requirements → Design → Components → Trade-offs
+Label each section on its own line:
+**Problem:** one line — what we're building, in my words.
+**Requirements:** functional + the 1-2 non-functional ones that actually matter here. Brief capacity estimate ONLY if scale is part of the question.
+**Design:** the chosen architecture — pick one and commit, plus the diagram (rules below).
+**Components:** each key component and its one-line job.
+**Trade-offs:** why this over the alternative, the ONE bottleneck that matters, and what I'd NOT build in v1.
 
-For whatever sections you do include: be opinionated, not a menu of options — pick an architecture, defend it, name the ONE bottleneck that matters most, and say what you'd explicitly NOT build in v1.
+SCOPE DISCIPLINE — answer EXACTLY what was asked:
+- A narrow follow-up ("how would you handle payment?") gets ONLY that — skip the template.
+- A focused scenario question gets the template scoped tightly to that flow — no planet-scale math for a single parking garage.
+- Keep the whole answer deliverable aloud in ~3-4 minutes. Short sections, real spoken words, never pad.
 
 SPEAKABILITY — this is read aloud in a live interview:
 - Short, crisp bullets. No rambling paragraphs, no filler sentences, no "let's say" hedging chains.
-- Most important decision FIRST in every section.
-- Total length: deliverable aloud in ~5 minutes. Depth over breadth.
+- Most important decision FIRST in every section. Depth over breadth.
 
 MATH CORRECTNESS — the interviewer WILL check the arithmetic:
 - State assumptions once, then derive every number step by step: "1M users → 10% concurrently playing = 100K players → 2 players/game = 50K games".
@@ -368,8 +386,18 @@ The diagram is required whenever you present an architecture. For a narrow follo
 """ + incrementalRule
         case .coding:
             s += """
-When a full solution is asked (the default for a coding problem): approach first — a short plain-language plan in your natural voice ("the trick here is...") — then the full solution code with a comment on every line, in a language-tagged fenced code block, then a short time/space complexity note.
-But scope rules apply: if only the approach, only a fix, only complexity, or only one part is asked — give ONLY that. Don't dump the full solution structure for a narrow question.
+When a full solution is asked (the default for a coding problem), follow this exact flow, each part 1-2 SHORT spoken lines (code excepted):
+Question → Approach → Data Structure → Time Complexity → Space Complexity → Go Code → What to say to interviewer
+Label each section on its own line:
+**Question:** one line — the problem restated in my words.
+**Approach:** the trick/plan in plain spoken language ("the trick here is...").
+**Data Structure:** which one and why, one line.
+**Time Complexity:** e.g. O(n) — with a half-line why.
+**Space Complexity:** same.
+**Go Code:** the full solution in Go (unless the question demands another language), in a ```go fenced block, with a short comment on every line.
+**What to say:** 2-3 natural spoken lines I can say while walking the interviewer through it.
+Keep every non-code section tight — it must sound like my real words, not an article.
+But scope rules win: if only the approach, only a fix, only complexity, or only one part is asked — give ONLY that, skip the rest of the template.
 """
         }
         if !jd.isEmpty     { s += "\n\nJob Description:\n\(jd)" }
@@ -381,8 +409,8 @@ But scope rules apply: if only the approach, only a fix, only complexity, or onl
         var p = """
 Analyze this screenshot and answer EXACTLY what it asks — scope your answer to the question on screen, nothing extra.
 
-If it contains a coding problem or algorithm question: give the approach first (short plain-language plan), then a complete, correct solution with a comment on every line in a language-tagged fenced code block, then a short time/space complexity note.
-If it contains a system design or conceptual question: give an opinionated design scoped to what's asked, with an ASCII architecture diagram in a fenced code block when you present an architecture.
+If it contains a coding problem or algorithm question, follow this flow with short labeled sections: Question → Approach → Data Structure → Time Complexity → Space Complexity → Go Code → What to say to interviewer. Code in Go (unless the problem demands another language), in a ```go fenced block with a short comment on every line; every other section 1-2 short spoken lines.
+If it contains a system design or conceptual question: give an opinionated design scoped to what's asked (Problem → Requirements → Design → Components → Trade-offs, short sections), with an ASCII architecture diagram in a fenced code block when you present an architecture.
 If it contains a multiple choice or quiz question: state the correct answer clearly, then explain why — briefly.
 Otherwise answer only what the screenshot is asking.
 """
