@@ -148,7 +148,9 @@ enum RepoCommand {
         let remotePrefixes = ["git@", "https://", "http://", "ssh://", "git://",
                               "github.com/", "www.github.com/", "gitlab.com/", "bitbucket.org/"]
         if remotePrefixes.contains(where: { lower.hasPrefix($0) }) {
-            return RemoteRepo(input: s) != nil ? .remote(s) : .invalid(s)
+            // Store the normalised URL, never the raw line the user typed.
+            guard let parsed = RemoteRepo(input: s) else { return .invalid(s) }
+            return .remote(parsed.canonical)
         }
 
         let isPathish = s.hasPrefix("/") || s.hasPrefix("~") || s.hasPrefix("./")
@@ -168,7 +170,9 @@ enum RepoCommand {
         // spoken phrase like "map/reduce" never gets mistaken for a repository.
         if explicit {
             let parts = s.split(separator: "/")
-            if parts.count == 2, !s.contains(" "), RemoteRepo(input: s) != nil { return .remote(s) }
+            if parts.count == 2, !s.contains(" "), let parsed = RemoteRepo(input: s) {
+                return .remote(parsed.canonical)
+            }
             return .invalid(s)
         }
         return nil
@@ -184,6 +188,8 @@ struct RemoteRepo {
     let branch: String?
 
     var slug: String { "\(owner)/\(name)" }
+    // Normalised form worth storing and showing back, with any prose stripped.
+    var canonical: String { "\(host)/\(owner)/\(name)" }
     var folderName: String { "\(host)-\(owner)-\(name)".replacingOccurrences(of: "/", with: "-") }
 
     func cloneURL(token: String) -> String {
@@ -193,8 +199,20 @@ struct RemoteRepo {
 
     // Accepts: https://github.com/o/r[.git], https://github.com/o/r/tree/branch,
     // git@github.com:o/r.git, github.com/o/r, and the bare "o/r" shorthand.
+    // Repo and owner names can only contain these. Anything else means we parsed
+    // prose, not a URL, and must be rejected rather than cloned.
+    private static let nameAllowed = CharacterSet(charactersIn:
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
+
     init?(input: String) {
         var s = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Only the first whitespace-delimited token can be a URL. Trailing words
+        // are prose ("github.com/me/app review this code") and must never end up
+        // inside the repository name.
+        if let space = s.rangeOfCharacter(from: .whitespacesAndNewlines) {
+            s = String(s[s.startIndex..<space.lowerBound])
+        }
+        guard !s.isEmpty else { return nil }
         var host = "github.com"
         var branch: String?
 
@@ -226,6 +244,9 @@ struct RemoteRepo {
         var repo = comps[1]
         if repo.hasSuffix(".git") { repo = String(repo.dropLast(4)) }
         guard !comps[0].isEmpty, !repo.isEmpty else { return nil }
+        guard comps[0].unicodeScalars.allSatisfy(Self.nameAllowed.contains),
+              repo.unicodeScalars.allSatisfy(Self.nameAllowed.contains),
+              host.unicodeScalars.allSatisfy(Self.nameAllowed.contains) else { return nil }
 
         self.host = host
         self.owner = comps[0]

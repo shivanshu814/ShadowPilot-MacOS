@@ -273,7 +273,7 @@ struct SpotlightBar: View {
         // Local is only meaningful with a codebase indexed — say so instead of
         // quietly answering without file references.
         if mode == .repo, !repo.isReady {
-            vm.promptForRepo()
+            vm.chooseRepoFolder()
             return
         }
         // Cloud is an action as much as a mode: selecting it kicks off a full

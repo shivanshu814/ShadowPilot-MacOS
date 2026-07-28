@@ -180,13 +180,19 @@ class AppViewModel: ObservableObject {
         let q = (question ?? transcript).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !q.isEmpty else { statusText = "Nothing heard yet"; return }
         // "/repo …", a folder path, or a git URL loads a codebase instead of asking
-        if loadRepoIfCommand(q) { return }
-        // "/cloud [focus]" hands the whole repo to a Cursor agent instead
+        // Cloud is checked BEFORE /repo: with Cloud selected, a URL in the box
+        // names the repo to review remotely, and must not be cloned locally.
         if let focus = Self.cloudCommandFocus(q) {
             transcript = ""
             cloudReview(focus: focus)
             return
         }
+        if answerMode.isCloud {
+            transcript = ""
+            cloudReview(focus: q)
+            return
+        }
+        if loadRepoIfCommand(q) { return }
 
         var mode = ModelRouter.resolveMode(question: q, selected: answerMode, previous: history.last?.mode)
         // Repo mode without an index would invite the model to invent file paths —
@@ -591,13 +597,28 @@ class AppViewModel: ObservableObject {
     // findings report — architecture, defects, weak spots, talking points. It runs
     // for minutes, so this is a before-the-interview move; the report is then kept
     // as context so the instant local answers know what the deep pass found.
-    func cloudReview(focus: String = "") {
+    func cloudReview(focus rawFocus: String = "") {
         let cursor = CursorAgentService()
         guard cursor.isConfigured else {
             presentRepoNotice(CursorAgentError.noKey.localizedDescription, status: "No Cursor key")
             return
         }
-        guard let repoURL = resolvedRemoteURL() else {
+
+        // "github.com/me/app please review the auth flow" — the leading URL is
+        // the repo to review, everything after it is what to weight it toward.
+        var focus = rawFocus.trimmingCharacters(in: .whitespacesAndNewlines)
+        var explicitURL: String?
+        if case .some(.remote(let url)) = RepoCommand.parse(focus) {
+            explicitURL = url
+            if let space = focus.rangeOfCharacter(from: .whitespacesAndNewlines) {
+                focus = String(focus[space.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+            } else {
+                focus = ""
+            }
+            UserDefaults.standard.set(url, forKey: "repoRemote")   // later /cloud reuses it
+        }
+
+        guard let repoURL = explicitURL ?? resolvedRemoteURL() else {
             presentRepoNotice(CursorAgentError.noRepo.localizedDescription, status: "No repo URL")
             return
         }
@@ -738,10 +759,37 @@ class AppViewModel: ObservableObject {
     // Typing a folder path or a repo URL into the bar loads that codebase on the
     // spot — no Setup trip mid-interview. Returns false when the text is just a
     // question, so the normal answer path takes over.
+    // Clicking the Local pill with no codebase: open a folder picker right there
+    // rather than only explaining the /repo command. The overlay is a
+    // non-activating panel, so the app has to come forward or the sheet opens
+    // behind everything.
+    func chooseRepoFolder() {
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Index"
+        panel.message = "Pick the root of the repo to load"
+        if let last = UserDefaults.standard.string(forKey: "repoPath"), !last.isEmpty {
+            panel.directoryURL = URL(fileURLWithPath: last).deletingLastPathComponent()
+        }
+        guard panel.runModal() == .OK, let url = panel.url else {
+            promptForRepo()          // cancelled: show what else can be done
+            return
+        }
+        UserDefaults.standard.set("", forKey: "repoRemote")
+        loadRepo(.local(url.path))
+    }
+
     @discardableResult
     func loadRepoIfCommand(_ text: String) -> Bool {
         guard let command = RepoCommand.parse(text) else { return false }
+        loadRepo(command)
+        return true
+    }
 
+    private func loadRepo(_ command: RepoCommand) {
         currentAnswerTask?.cancel()
         whisperTask?.cancel()
         transcript = ""
@@ -759,7 +807,7 @@ class AppViewModel: ObservableObject {
                 ? "Give me a target: `/repo ~/code/my-service` or `/repo github.com/owner/repo`."
                 : "Can't load `\(target)` — that's not a folder on this Mac or a repo URL I recognise."
             statusText = "Repo not loaded"
-            return true
+            return
         }
 
         currentAnswerTask = Task {
@@ -803,7 +851,6 @@ class AppViewModel: ObservableObject {
             """
             statusText = "Repo ready · \(idx.rootName)"
         }
-        return true
     }
 
     // Re-open the last repo (local folder or previously cloned remote) at launch.
