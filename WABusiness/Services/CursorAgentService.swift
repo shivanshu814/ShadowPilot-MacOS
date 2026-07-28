@@ -35,7 +35,15 @@ enum CursorAgentError: LocalizedError {
             return "Cloud review needs a GitHub URL. Load the repo with /repo github.com/owner/name, or make sure the local folder has an origin remote."
         case .http(let code, let body):
             if code == 401 || code == 403 { return "Cursor rejected the key (HTTP \(code)). Check CURSOR_API_KEY." }
-            if code == 404 { return "Cursor can't see that repo (HTTP 404). Connect it to your Cursor account first." }
+            if code == 404 || body.contains("default branch") || body.contains("repository") {
+                return """
+                Cursor can't read that repository (HTTP \(code)).
+
+                Cloud review runs inside Cursor, so Cursor's own GitHub connection needs access to the repo — your GITHUB_TOKEN is not used for this.
+
+                Fix it at cursor.com → Dashboard → Integrations → GitHub, install the Cursor app on the account or org that owns the repo, and grant it access to that repo. Private repos are not visible until you do.
+                """
+            }
             return "Cursor API error \(code): \(body.prefix(300))"
         case .malformed(let what):
             return "Unexpected Cursor API response: \(what)"

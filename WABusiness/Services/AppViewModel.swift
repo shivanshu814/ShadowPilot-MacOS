@@ -640,11 +640,21 @@ class AppViewModel: ObservableObject {
             let started = Date()
             defer { cloudReviewRunning = false }
             do {
+                // Cursor errors out if it has to guess the branch itself, so
+                // look it up first and pass it explicitly.
+                var ref = RemoteRepo(input: repoURL)?.branch
+                if ref == nil, let parsed = RemoteRepo(input: repoURL) {
+                    statusText = "Resolving default branch…"
+                    ref = await GitHubAPI.defaultBranch(owner: parsed.owner,
+                                                        name: parsed.name,
+                                                        token: EnvConfig.gitToken)
+                }
+
                 statusText = "Starting cloud agent…"
-                answer = "Starting a Cursor agent on `\(repoURL)`…\n\nThis reads the whole repo and takes a few minutes. Ask other questions meanwhile — the report lands here when it's done."
+                answer = "Starting a Cursor agent on `\(repoURL)`\(ref.map { " (\($0))" } ?? "")…\n\nThis reads the whole repo and takes a few minutes. Ask other questions meanwhile — the report lands here when it's done."
                 let run = try await cursor.startReview(
                     repoURL: repoURL,
-                    ref: nil,
+                    ref: ref,
                     prompt: CursorAgentService.reviewPrompt(focus: focus),
                     name: "Interview review — \(repoName(from: repoURL))")
 

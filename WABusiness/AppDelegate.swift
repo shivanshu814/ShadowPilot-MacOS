@@ -6,11 +6,13 @@ import AVFoundation
 class AppDelegate: NSObject, NSApplicationDelegate {
     var setupWindowController: NSWindowController?
     var overlayController: OverlayWindowController?
-    var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         requestPermissions()
-        setupMenuBar()
+        // No menu bar icon and no Dock icon once the overlay is up: nothing about
+        // this app should be visible on screen. Cmd+Shift+S is the way back to
+        // Setup, which is also where Quit lives.
+        HotkeyManager.shared.onOpenSetup = { [weak self] in self?.reopenSetup() }
         NSApp.setActivationPolicy(.regular)
         Task { await ProviderHealth.shared.checkAll() }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -18,32 +20,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Menu bar icon (always visible so user can reopen setup)
-    private func setupMenuBar() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "shield.lefthalf.filled", accessibilityDescription: "WA Business")
-            button.action = #selector(menuBarTapped)
-            button.target = self
-        }
-    }
-
-    @objc private func menuBarTapped() {
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Open Dashboard", action: #selector(openDashboard), keyEquivalent: "d"))
-        menu.addItem(NSMenuItem(title: "Open Setup", action: #selector(reopenSetup), keyEquivalent: ","))
-        menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit WA Business", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        statusItem?.menu = menu
-        statusItem?.button?.performClick(nil)
-        statusItem?.menu = nil
-    }
-
     @objc private func openDashboard() {
         Task { @MainActor in DashboardWindow.show() }
     }
 
     @objc private func reopenSetup() {
+        // Already open: just bring it forward instead of building a second one.
+        if let existing = setupWindowController?.window {
+            NSApp.setActivationPolicy(.regular)
+            existing.makeKeyAndOrderFront(nil)
+            existing.orderFrontRegardless()
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
         overlayController?.window?.close()
         overlayController = nil
         NSApp.setActivationPolicy(.regular)

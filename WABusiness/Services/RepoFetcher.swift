@@ -255,6 +255,27 @@ struct RemoteRepo {
     }
 }
 
+// MARK: - GitHub REST
+
+enum GitHubAPI {
+    // Cursor rejects a launch when it can't work out the default branch itself,
+    // so resolve it here and hand it over explicitly.
+    static func defaultBranch(owner: String, name: String, token: String) async -> String? {
+        guard let url = URL(string: "https://api.github.com/repos/\(owner)/\(name)") else { return nil }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        if !token.isEmpty { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let code = (response as? HTTPURLResponse)?.statusCode,
+              (200..<300).contains(code),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        return json["default_branch"] as? String
+    }
+}
+
 // MARK: - git process runner
 
 enum Git {

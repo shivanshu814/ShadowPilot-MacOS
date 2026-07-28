@@ -11,6 +11,7 @@ final class HotkeyManager {
     var onClear: (() -> Void)?           // ⌘⇧X  — clear
     var onWritingToggle: (() -> Void)?   // ⌘⇧W  — toggle typing mode
     var onBugScan: (() -> Void)?         // ⌘⇧B  — scan the loaded repo for bugs
+    var onOpenSetup: (() -> Void)?       // ⌘⇧S  — reopen Setup (there is no menu bar icon)
 
     private var eventHandler: EventHandlerRef?
     private var hotkeys: [EventHotKeyRef?] = []
@@ -41,6 +42,7 @@ final class HotkeyManager {
                                     case 4: me.onClear?()
                                     case 5: me.onWritingToggle?()
                                     case 6: me.onBugScan?()
+                                    case 7: me.onOpenSetup?()
                                     default: break
                                     }
                                 }
@@ -66,6 +68,9 @@ final class HotkeyManager {
         // ⌘⇧B  (repo bug scan)
         registerKey(keyCode: UInt32(kVK_ANSI_B),
                     modifiers: UInt32(cmdKey | shiftKey), id: 6)
+        // ⌘⇧S  (reopen Setup — the app has no menu bar or Dock icon)
+        registerKey(keyCode: UInt32(kVK_ANSI_S),
+                    modifiers: UInt32(cmdKey | shiftKey), id: 7)
     }
 
     private func registerKey(keyCode: UInt32, modifiers: UInt32, id: UInt32) {

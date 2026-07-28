@@ -42,14 +42,26 @@ struct SetupView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
 
-                // Header
-                Text("WA Business")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.spAmber)
-                    .padding(.top, 40)
-                Text("Session Setup")
-                    .font(.system(size: 22, weight: .bold))
-                    .padding(.top, 2)
+                // Header. Quit lives here because the app deliberately has no
+                // menu bar icon and no Dock icon — this window is the only UI
+                // chrome it ever shows. Reopen it any time with Cmd+Shift+S.
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("WA Business")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.spAmber)
+                        Text("Session Setup")
+                            .font(.system(size: 22, weight: .bold))
+                    }
+                    Spacer()
+                    Button("Quit") { NSApp.terminate(nil) }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11.5, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .help("Quit WA Business")
+                        .padding(.top, 4)
+                }
+                .padding(.top, 40)
 
                 sectionDivider
 
