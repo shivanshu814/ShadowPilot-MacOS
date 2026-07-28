@@ -145,20 +145,30 @@ struct CursorAgentService {
     static func reviewPrompt(focus: String) -> String {
         let scope = focus.trimmingCharacters(in: .whitespacesAndNewlines)
         var p = """
-        Review this repository for an engineer who has to discuss and defend it in a technical interview.
+        Review this repository for an engineer who has to discuss and defend it live in a technical interview, with the repo open on screen.
 
         HARD CONSTRAINTS:
-        - Do NOT modify, create or delete any file. Do NOT commit, branch, or open a pull request.
-        - Do NOT write implementation code. Describe changes in words; a 1-3 line snippet is the maximum, only when words alone are unclear.
-        - Every claim must point at a real path and line range, e.g. `internal/auth/token.go:L88-L104`. Never invent one.
+        - Do NOT modify, create or delete any file. Do NOT commit, branch, or open a pull request. This is a written report only.
+        - Every claim must point at a real path and line range, e.g. `internal/auth/token.go:L88-L104`. Never invent a path, a symbol, or a line number.
+        - Write in my speaking voice: contractions, plain spoken English, opinions. No "it is important to note", no "delve", no restating the question.
 
-        Read broadly across the codebase first, then write a report in exactly these sections:
+        Write the report in exactly these sections.
 
         ## Architecture
         How the system fits together — the main modules, and how one real request or job flows through them end to end. Name the actual files it passes through.
 
-        ## Defects
-        Concrete bugs, ordered most severe first. For each: the `path:Lx-Ly`, what goes wrong and the input or interleaving that triggers it, then one sentence on what the fix would be. Logic errors, nil/bounds crashes, races and unsynchronised shared state, leaks, unhandled errors, auth and injection holes, N+1 queries. No style opinions, no "add tests" filler.
+        ## Findings
+        Concrete defects, most severe first: logic errors, nil/index/bounds crashes, races and unsynchronised shared state, leaks, unhandled errors, auth and injection holes, N+1 queries and obvious performance traps. No style opinions, no "add tests" filler. If there is nothing real, say so rather than padding.
+
+        Give EVERY finding in exactly this shape, and nothing else:
+
+        ### <n>. <short title> · <HIGH|MEDIUM|LOW>
+        **Open:** the file I pull up for this one, full repo-relative path. Most relevant first if there is more than one.
+        **What it does:** 1-2 lines on what that code currently does, citing `path:Lx-Ly`.
+        **Issue:** what actually goes wrong, and the input or interleaving that triggers it. One or two lines.
+        **Change:** the exact edit as a fenced ```diff block — a few lines of real context, `-` for removed lines, `+` for added, preceded by a line reading `// path/to/file.ext  L120-L134`. The diff is for me to apply by hand; you still must not touch the repo.
+        **Why:** one or two lines — why this fix, and what breaks without it.
+        **What to say:** 2-3 natural spoken lines I can say out loud while I make the edit, so it sounds like I reasoned it out live ("so if you look at line 54, that hex literal is split across a newline — that's why nothing renders").
 
         ## Weak spots
         The parts a reviewer would push on — tight coupling, missing tests, performance traps, anything fragile. One line each, with the file.
