@@ -1,274 +1,331 @@
-<p align="center">
-  <img src="ShadowPilot/shadow_pilot_logo_no_bg.png" width="120" alt="ShadowPilot Logo" />
-</p>
+# WA Business for macOS
 
-<h1 align="center">ShadowPilot — macOS</h1>
+A real-time AI copilot that runs in a transparent overlay on top of every other
+window. It listens to the conversation, reads your screen when you ask it to,
+and can answer questions about a real codebase using actual file paths and line
+numbers.
 
-<p align="center">
-  <b>Real-time AI interview copilot that lives in a transparent overlay on your screen.</b><br/>
-  Listens to interview questions, captures your screen, and generates tailored answers — all invisible to the interviewer.
-</p>
+Platform: macOS 13 or later. Swift 5.9. Xcode 15 or later.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/platform-macOS%2013%2B-black?style=flat-square&logo=apple&logoColor=white" />
-  <img src="https://img.shields.io/badge/swift-5.9-F05138?style=flat-square&logo=swift&logoColor=white" />
-  <img src="https://img.shields.io/badge/xcode-15%2B-147EFB?style=flat-square&logo=xcode&logoColor=white" />
-  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" />
-</p>
 
----
+## What it does
 
-## ✨ Features
+**Live transcription.** Captures system audio from meeting apps and transcribes
+it on-device with Apple's Speech framework.
 
-| Feature | Description |
-|---|---|
-| 🎙️ **Live Transcription** | Captures system audio (meeting apps) and transcribes in real-time using Apple's `Speech` framework |
-| 🧠 **Smart Model Routing** | Auto-detects question type — Q&A → **Groq** (fastest), Code Review/Coding → **Claude Sonnet 4.5**, System Design → **GPT-4o** — with manual override pills |
-| 🏁 **Hedged Racing** | Q&A questions fire the two fastest providers in parallel — first token wins, loser cancelled |
-| 📸 **Screenshot Analysis** | One-click screen capture + Claude Sonnet vision — approach first, then fully-commented code |
-| 🪟 **Invisible Overlay** | Glassmorphic floating pill that stays on top of all windows — undetectable in screen shares |
-| ⌨️ **Global Hotkeys** | Control everything without switching apps — no suspicious alt-tabs |
-| 💬 **Conversation Memory** | Always-on rolling history — follow-ups inherit context AND mode ("now add multi-region" answers only the delta) |
-| 👁️ **Whisper Mode** | Answer reveals gradually, mimicking natural reading speed on camera |
-| ⚡ **Hands-free Mode** | Silence-triggered answers with continuous listening — follow-ups spoken mid-answer are never missed. **Headphones required** (speaker audio can self-trigger it) |
-| 🩺 **Provider Health Check** | Every provider tested at launch with live latency — dead providers auto-excluded from routing |
-| 🗂️ **Session History** | Every Q&A logged to local SQLite with optional Neon cloud backup — searchable, exportable as Markdown |
-| 🎯 **Session Context** | Paste the job description + your resume so every answer is role-specific |
-| 🗣️ **Filler Phrases** | Shows natural filler text instantly while AI thinks — no awkward pauses |
+**Smart routing.** Every question is classified into a mode, and each mode has
+its own ordered chain of AI providers. Q&A goes to the fastest models, anything
+touching code goes to the strongest.
 
----
+**Hedged racing.** For Q&A the two fastest providers are called in parallel and
+the first one to produce a token wins. The loser is cancelled mid-stream.
 
-## 🛠 Prerequisites
+**Repo mode.** Point it at a codebase and answers come back citing real files
+and real line ranges, with the exact diff to apply. See "Repo mode" below.
 
-- **macOS 13.0+** (Ventura or later)
-- **Xcode 15+** with Swift 5.9
-- **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** — `brew install xcodegen`
-- At least **one** API key (Bedrock, OpenRouter, or OpenAI)
+**Cloud review.** Hands the whole repository to a Cursor cloud agent, which
+reads all of it and writes a findings report. See "Cloud review" below.
 
----
+**Screenshot analysis.** One keystroke captures the screen and sends it to a
+vision model, which returns an approach followed by fully commented code.
 
-## ⚡ One-Line Install (Recommended)
+**Conversation memory.** A rolling history means follow-ups inherit both the
+context and the mode. Asking "now add multi-region" answers only the delta
+instead of regenerating the whole design.
 
-Paste this in Terminal and you're done — it handles everything automatically:
+**Whisper mode.** Reveals the answer gradually so reading it aloud on camera
+looks natural.
+
+**Hands-free mode.** Fires an answer when the speaker pauses, and keeps
+listening throughout. Headphones are required, otherwise speaker audio
+retriggers it.
+
+**Provider health checks.** Every provider is tested at launch with live
+latency. Dead ones are dropped from routing automatically.
+
+**Session history.** Every exchange is written to a local SQLite database, with
+optional backup to Neon Postgres. Searchable, and exportable as Markdown.
+
+**Role context.** Paste the job description and your resume so answers are
+specific to the role.
+
+**Speaking style.** Pick an accent preset or record a voice sample, and answers
+get written in your phrasing so they sound like you when read aloud.
+
+
+## Requirements
+
+- macOS 13.0 or later
+- Xcode 15 or later, with Swift 5.9
+- XcodeGen: `brew install xcodegen`
+- At least one AI provider API key
+
+
+## Install
+
+### One-line install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/shivanshu814/ShadowPilot-MacOS/main/install.sh | bash
 ```
 
-This will:
-1. ✅ Check macOS version & install Xcode CLI tools if missing
-2. ✅ Install Homebrew + XcodeGen if missing
-3. ✅ Clone the repo to `~/.shadowpilot`
-4. ✅ Prompt you for an API key and save it to `~/.shadowpilot.env`
-5. ✅ Build the app and install it to `/Applications/ShadowPilot.app`
-6. ✅ Offer to launch immediately
+It checks the macOS version, installs the Xcode command line tools, Homebrew
+and XcodeGen if any are missing, clones the repo to `~/.wabusiness`, builds a
+Release binary, and installs it to `/Applications`. If `/Applications` is not
+writable it falls back to `~/Applications` instead of failing.
 
-> **Uninstall anytime:** `bash ~/.shadowpilot/uninstall.sh`
+Keys are picked up automatically. The installer looks for an existing env file
+in the directory you ran it from, then `~/.shadowpilot.env`, then `~/.env`, and
+copies every filled key into `~/.wabusiness.env`. Keys already set there are
+never overwritten, so re-running it is safe. Only if nothing is found does it
+ask for a single key, and it works out the provider from the key's own prefix
+(`gsk_` for Groq, `sk-or-v1-` for OpenRouter, `sk-` for OpenAI).
 
----
+Uninstall:
 
-## 🚀 Manual Setup (Step by Step)
+```bash
+bash ~/.wabusiness/uninstall.sh            # removes the app, keeps your keys
+bash ~/.wabusiness/uninstall.sh --purge    # also deletes ~/.wabusiness.env
+```
 
-If you prefer doing it yourself:
-
-### 1. Clone the repo
+### Build from source
 
 ```bash
 git clone https://github.com/shivanshu814/ShadowPilot-MacOS.git
 cd ShadowPilot-MacOS
+cp .env.example ~/.wabusiness.env
 ```
 
-### 2. Set up environment variables
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and fill in at least one API key:
-
-```env
-# Groq (fastest — primary for Q&A)
-GROQ_API_KEY=gsk_...
-
-# OpenRouter (Claude Sonnet 4.5 — review/design/coding)
-OPENROUTER_API_KEY=sk-or-v1-...
-
-# OpenAI (GPT-4o — system design)
-OPENAI_API_KEY=sk-...
-
-# Optional fallbacks
-BEDROCK_API_KEY=...
-BEDROCK_REGION=us-east-1
-ACCOUNT_ID=...      # Cloudflare Workers AI
-API_TOKEN=...       # Cloudflare Workers AI
-
-# Optional cloud backup of session history
-NEON_DATABASE_URL=postgresql://...
-```
-
-> **Tip:** The app searches for `.env` in multiple locations:  
-> `~/.shadowpilot.env` → `~/.env` → project root → app bundle → DerivedData
-
-### 3. Generate the Xcode project
+Open `~/.wabusiness.env` and fill in at least one key. Then:
 
 ```bash
 xcodegen generate
+xcodebuild -scheme WABusiness -configuration Debug -derivedDataPath build build
+open "build/Build/Products/Debug/WA Business.app"
 ```
 
-### 4. Build & Run
-
-**Option A — Xcode:**
-```
-Open ShadowPilot.xcodeproj → Select scheme "ShadowPilot" → ⌘R
-```
-
-**Option B — Terminal:**
-```bash
-xcodebuild -scheme ShadowPilot -configuration Debug -derivedDataPath build build
-```
-
-Then launch the app:
-```bash
-open build/Build/Products/Debug/ShadowPilot.app
-```
-
-### 5. (Optional) Install to /Applications
+To install it permanently:
 
 ```bash
-cp -R build/Build/Products/Debug/ShadowPilot.app /Applications/
+cp -R "build/Build/Products/Debug/WA Business.app" /Applications/
 ```
 
-Now you can launch ShadowPilot from **Spotlight** (`⌘ Space` → type "ShadowPilot") or from the **Applications** folder.
+You can also open `WABusiness.xcodeproj` in Xcode, select the WABusiness
+scheme, and press Cmd+R.
 
----
+### Pre-built app
 
-## 📦 Direct Install (Pre-built .app)
+Download the latest `WA Business.app.zip` from the Releases page, unzip it,
+drag the app to `/Applications`, and create `~/.wabusiness.env` with your key.
+The app is unsigned, so on first launch use right-click then Open to get past
+Gatekeeper.
 
-If you don't want to build from source, download the latest `.app` from [Releases](https://github.com/shivanshu814/ShadowPilot-MacOS/releases):
 
-1. Download `ShadowPilot.app.zip` from the latest release
-2. Unzip and drag `ShadowPilot.app` to `/Applications`
-3. Create your env file:
-   ```bash
-   cp ~/.shadowpilot.env.example ~/.shadowpilot.env
-   # Edit ~/.shadowpilot.env and add your API key
-   ```
-4. Launch from Applications or Spotlight
-5. On first launch, **right-click → Open** to bypass Gatekeeper (unsigned app)
+## Configuration
 
----
+Keys are read from the first of these that has a value:
 
-## 🔐 First Launch — Grant Permissions
+1. Process environment (useful when running from Xcode)
+2. `~/.wabusiness.env`
+3. `~/.env`
+4. `.env` next to the app bundle, or in any parent directory up to eight levels
 
-On first launch, macOS will ask for:
-- 🎤 **Microphone** — to hear interview questions
-- 🗣️ **Speech Recognition** — to transcribe audio
-- 🖥️ **Screen Recording** — to capture system audio from meeting apps
+`~/.wabusiness.env` is the most reliable location, because it works no matter
+where the app is installed. See `.env.example` for the full list of keys and
+what each provider is used for.
 
-> **Note:** If hotkeys don't work, go to **System Settings → Privacy & Security → Accessibility** and add ShadowPilot.
 
----
+## Routing
 
-## ⌨️ Keyboard Shortcuts
+Each mode has an ordered chain and falls back left to right. A key you leave
+blank drops that provider from every chain. One working key is enough to run.
 
-All hotkeys work **globally** — no need to focus the app window.
+| Mode | Chain | Token budget |
+|---|---|---|
+| Q&A and Auto | Groq, Cloudflare, Bedrock, OpenAI, OpenRouter GPT-4o | 512 |
+| Code | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o, Groq, Bedrock | 8192 |
+| Review | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o, Groq, Bedrock | 4096 |
+| Design | OpenRouter Sonnet 4.5, OpenAI, Groq, Bedrock, Cloudflare | 8192 |
+| Local | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o, Bedrock | 8192 |
+| Screenshot | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o (vision only) | 8192 |
+| Cloud | Cursor agent, no chain and no fallback | not applicable |
+
+How fallback behaves:
+
+1. Providers with no key, or muted in Setup, are removed before the chain runs.
+2. Q&A and Auto race the top two survivors in parallel. First token wins, the
+   loser is cancelled. If both fail, the rest of the chain is tried in order.
+3. Every other mode is sequential: on any error, move to the next provider. An
+   error only reaches the screen when all of them have failed.
+4. If a reply is cut off at the token budget, it auto-continues on the same
+   provider for up to three rounds, so the full answer always arrives.
+5. Failing providers are flagged in Setup, where you can mute one so it stops
+   being tried at all.
+
+Groq is strongly recommended for Q&A speed. OpenRouter is the key that buys you
+Claude Sonnet for everything code-related. Model IDs are overridable in the env
+file if a model is ever renamed or retired.
+
+
+## Repo mode
+
+Load a codebase from the overlay bar, mid-conversation. Nothing is configured
+in Setup or in the env file.
+
+```
+/repo ~/code/my-service          index a folder already on this Mac
+/repo github.com/owner/name      shallow-clone it first, then index
+```
+
+A bare path or URL works too, without the `/repo` prefix. Cloning a private
+repo needs `GITHUB_TOKEN` in the env file; the token is stripped from the git
+remote after cloning and redacted from any error message.
+
+Both sources end up identical. A cloned repo is written to disk and then
+indexed exactly like a folder you already had, so where the code came from
+changes nothing about how questions are answered.
+
+Indexing is local: a BM25 index over overlapping line windows, with camelCase
+and snake_case identifiers split so a question about "validate token" matches
+`validateAccessToken`. Only the handful of matched snippets is ever sent to a
+model. A medium repo indexes in well under a second and each query resolves in
+a few milliseconds.
+
+With a repo loaded, select the Local pill and answers arrive in this shape:
+
+```
+Open:         which files to pull up right now, full paths
+What it does: what that code currently does, citing path:Lx-Ly
+Answer:       the direct answer, or the defects, most severe first
+Change:       the exact edit as a diff
+Why:          why this fix, and what breaks without it
+What to say:  a few spoken lines to use while making the edit
+```
+
+Line numbers are real. The model is given the true numbers alongside the source
+and is told never to cite a line it cannot see.
+
+Cmd+Shift+B sweeps the whole repo for defects in batches, streaming findings as
+they arrive, each with a file, a line range, a severity and a suggested diff.
+
+
+## Cloud review
+
+The Cloud pill hands the repository to a Cursor cloud agent, which reads the
+entire codebase and writes a report covering architecture, defects with file
+and line references, weak spots, and talking points. The agent is instructed
+not to edit files, not to commit, and not to open a pull request. It reports
+only.
+
+This needs `CURSOR_API_KEY` in the env file, and the repo has to be reachable
+from your Cursor account. The agent runs on Cursor's own default model.
+
+Two things to know. It takes minutes, not seconds, and it cannot stream, so run
+it before an interview rather than during one. And it has no fallback: either
+the Cursor key works or the review does not run.
+
+Once a review finishes, its findings are kept and passed as background context
+into every later Local answer, so the fast local path knows what the deep pass
+already established. Findings can be cleared from Setup.
+
+Selecting the Cloud pill starts a full review immediately. With Cloud selected,
+anything you type becomes the review's focus, for example "focus on the auth
+flow". Hands-free mode never triggers a cloud review, so a pause in
+conversation cannot start a job that costs minutes.
+
+
+## Keyboard shortcuts
+
+All shortcuts are global. The app does not need to be focused.
 
 | Shortcut | Action |
 |---|---|
-| `⌘⇧L` | Start / Stop listening |
-| `⌘⇧A` | Get AI answer |
-| `⌘⇧D` | Capture screenshot + analyze |
-| `⌘⇧X` | Clear everything |
-| `⌘⇧W` | Toggle typing mode |
+| Cmd+Shift+L | Start or stop listening |
+| Cmd+Shift+A | Get an answer |
+| Cmd+Shift+D | Capture the screen and analyze it |
+| Cmd+Shift+B | Scan the loaded repo for bugs |
+| Cmd+Shift+X | Clear everything |
+| Cmd+Shift+W | Toggle typing mode |
 
----
 
-## 🏗 Project Structure
+## Permissions
 
-```
-ShadowPilot-macOS/
-├── install.sh                    # One-click installer (curl | bash)
-├── .env.example                  # Environment template
-├── project.yml                   # XcodeGen project spec
-├── ShadowPilot/
-│   ├── ShadowPilotApp.swift      # App entry point
-│   ├── AppDelegate.swift         # Menu bar + window management
-│   ├── OverlayWindowController.swift  # Floating transparent overlay
-│   ├── Info.plist                # Permissions declarations
-│   ├── ShadowPilot.entitlements  # macOS entitlements
-│   ├── Services/
-│   │   ├── EnvConfig.swift       # .env file parser
-│   │   ├── AppViewModel.swift    # Core app logic & state
-│   │   ├── BedrockService.swift  # AWS Bedrock API (streaming)
-│   │   ├── GPTService.swift      # OpenAI / OpenRouter API (streaming)
-│   │   ├── HotkeyManager.swift   # Global keyboard shortcuts
-│   │   ├── ScreenshotCapture.swift   # ScreenCaptureKit integration
-│   │   ├── SpeechRecognizer.swift    # Apple Speech framework
-│   │   ├── SystemAudioCapture.swift  # System audio capture
-│   │   ├── SilenceDetector.swift     # Silence detection for auto-mode
-│   │   └── ConversationTurn.swift    # Chat history model
-│   └── Views/
-│       ├── ContentView.swift     # Main overlay UI (Spotlight-style bar)
-│       ├── SetupView.swift       # Session setup (JD + Resume input)
-│       ├── AnswerView.swift      # AI answer display
-│       └── MarkdownView.swift    # Markdown rendering
-```
+macOS will ask for these on first launch.
 
----
-
-## 🔑 Model Routing
-
-Every question is routed to the **fastest model that is still correct for that question type**:
-
-| Question type | Primary model | Fallbacks |
-|---|---|---|
-| Interview Q&A | Groq Llama 3.3 70B (raced vs Cloudflare) | Bedrock → OpenAI → OpenRouter |
-| Code Review / PR | OpenRouter Claude Sonnet 4.5 | OpenAI GPT-4o → others |
-| System Design | OpenAI GPT-4o | OpenRouter Sonnet → others |
-| Coding (screenshot) | OpenRouter Claude Sonnet 4.5 (vision) | OpenAI GPT-4o |
-
-You only need **one** working key — the router skips unconfigured/unhealthy providers. **Groq is strongly recommended** for Q&A speed (~300ms first token). Model IDs are overridable via `.env` (see `.env.example`).
-
----
-
-## 🔒 Privacy & Security
-
-- All API keys are stored **locally** in `.env` (gitignored by default)
-- No data is sent to any server other than the AI provider you configure
-- Audio is processed on-device via Apple's Speech framework
-- Screenshots are captured locally via ScreenCaptureKit
-- The app never stores conversation data to disk
-
----
-
-## 📋 macOS Permissions
-
-| Permission | Why |
+| Permission | Why it is needed |
 |---|---|
-| Microphone | Capture audio to hear interview questions |
-| Speech Recognition | Transcribe speech to text on-device |
-| Screen Recording | Capture system audio from meeting apps (Zoom, Meet, etc.) |
-| Accessibility (optional) | Required for global hotkeys to work in some configurations |
+| Microphone | To hear the conversation |
+| Speech Recognition | To transcribe audio on-device |
+| Screen Recording | To capture system audio from meeting apps, and for screenshots |
+| Accessibility | Needed for global hotkeys in some configurations |
 
----
+If hotkeys do not respond, open System Settings, then Privacy and Security,
+then Accessibility, and add WA Business.
 
-## 🤝 Contributing
 
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/awesome-thing`)
-3. Commit your changes (`git commit -m 'Add awesome thing'`)
-4. Push to the branch (`git push origin feature/awesome-thing`)
-5. Open a Pull Request
+## Privacy
 
----
+- API keys are stored locally in the env file, which is gitignored.
+- Nothing is sent anywhere except the AI providers you configure, plus Cursor
+  if you use Cloud review, plus Neon if you enable history backup.
+- Audio is transcribed on-device by Apple's Speech framework.
+- Screenshots are captured locally through ScreenCaptureKit.
+- Repo indexing is entirely local. Only the snippets matched by a question are
+  sent to a model, never the whole codebase. Cloud review is the exception: it
+  runs inside Cursor by design.
+- Session history is written to a local SQLite database in Application Support.
+  Backup to Neon Postgres is off unless you enable it and provide a URL.
 
-## 📜 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+## Project structure
 
----
+```
+install.sh                        one-line installer
+.env.example                      environment template
+project.yml                       XcodeGen project spec
+WABusiness/
+  WABusinessApp.swift             app entry point
+  AppDelegate.swift               menu bar and window management
+  OverlayWindowController.swift   floating transparent overlay
+  Info.plist                      permission declarations
+  WABusiness.entitlements         entitlements
+  Services/
+    EnvConfig.swift               env file parsing and lookup order
+    AppViewModel.swift            core state and answer orchestration
+    ModelRouter.swift             modes, provider chains, prompts
+    GPTService.swift              OpenAI-compatible streaming client
+    BedrockService.swift          AWS Bedrock streaming client
+    ProviderHealth.swift          launch-time latency checks and muting
+    RepoIndex.swift               local BM25 codebase index and retrieval
+    RepoFetcher.swift             git clone and pull, repo URL parsing
+    CursorAgentService.swift      Cursor cloud agent client
+    SpeechRecognizer.swift        Apple Speech framework wrapper
+    SystemAudioCapture.swift      system audio capture
+    SilenceDetector.swift         pause detection for hands-free mode
+    ScreenshotCapture.swift       ScreenCaptureKit integration
+    StyleRecorder.swift           voice sample recording
+    HotkeyManager.swift           global keyboard shortcuts
+    SessionStore.swift            local SQLite session log
+    NeonSync.swift                optional Neon Postgres backup
+    ConversationTurn.swift        conversation history model
+  Views/
+    ContentView.swift             overlay bar and mode pills
+    SetupView.swift               session setup
+    AnswerView.swift              answer panel and tabs
+    HistoryView.swift             session history dashboard
+    MarkdownView.swift            Markdown rendering
+```
 
-<p align="center">
-  <b>Built with ❤️ for interview warriors everywhere.</b><br/>
-  <sub>⭐ Star this repo if ShadowPilot helped you land the job!</sub>
-</p>
+
+## Contributing
+
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/your-change`
+3. Commit your changes.
+4. Push the branch.
+5. Open a pull request.
+
+
+## License
+
+MIT. See the LICENSE file.

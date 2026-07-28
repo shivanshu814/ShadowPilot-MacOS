@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.wabusiness.app</string>
+    <key>CFBundleName</key>
+    <string>WA Business</string>
+    <key>CFBundleDisplayName</key>
+    <string>WA Business</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>WA Business needs microphone access to hear interview questions.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>WA Business uses speech recognition to transcribe interview questions.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>WA Business captures meeting audio to hear the interviewer.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>WA Business needs this to stay on top of other windows.</string>
+</dict>
+</plist>
