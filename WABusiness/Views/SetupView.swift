@@ -287,27 +287,21 @@ struct SetupView: View {
             // in the number — and it's invisible if only the new role is known.
             VStack(alignment: .leading, spacing: 5) {
                 fieldLabel("Where the work happens")
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        subLabel("Today")
-                        Picker("", selection: $negWorkNow) {
-                            ForEach(WorkSetup.allCases) { w in Text(w.label).tag(w.rawValue) }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
+                HStack(spacing: 8) {
+                    subLabel("Today")
+                    Picker("", selection: $negWorkNow) {
+                        ForEach(WorkSetup.allCases) { w in Text(w.label).tag(w.rawValue) }
                     }
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.secondary.opacity(0.5))
-                        .padding(.top, 14)
-                    VStack(alignment: .leading, spacing: 4) {
-                        subLabel("This role")
-                        Picker("", selection: $negWork) {
-                            ForEach(WorkSetup.allCases) { w in Text(w.label).tag(w.rawValue) }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                }
+                HStack(spacing: 8) {
+                    subLabel("This role")
+                    Picker("", selection: $negWork) {
+                        ForEach(WorkSetup.allCases) { w in Text(w.label).tag(w.rawValue) }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
                 if negWorkNow != negWork {
                     Text(moveNote)
@@ -357,10 +351,12 @@ struct SetupView: View {
         }
     }
 
+    // Fixed width so the two segmented controls line up under each other
     private func subLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9.5))
-            .foregroundColor(.secondary.opacity(0.7))
+            .font(.system(size: 10.5))
+            .foregroundColor(.secondary.opacity(0.75))
+            .frame(width: 56, alignment: .leading)
     }
 
     private func fieldLabel(_ text: String) -> some View {
