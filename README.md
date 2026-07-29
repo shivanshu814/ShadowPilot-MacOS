@@ -255,9 +255,13 @@ go in beforehand, in Setup, under "Salary & negotiation":
   question that matters there is whether the band is location adjusted.
 - **Current pay and target**, in whatever form you actually think in.
 - **Current benefits**, so nothing already in hand gets traded away by accident.
-- **Where the work happens.** Office, hybrid or remote each open different
-  asks: relocation and commute, office days written into the letter, or the
-  location adjusted band question.
+- **Where the work happens, today and in the new role.** Both halves, because
+  the change is itself the argument. Handing back a fully remote setup for an
+  office is a real cost, not a preference, and it is one of the cleanest honest
+  things to put in the number: commute time and money you do not spend today,
+  relocation, a different cost of living, flexibility you already have. Moving
+  the other way, "you will save on the commute" is not a compensation argument
+  and the mode says so. Same setup in both, and the note simply does not appear.
 - **Who you are negotiating with.** A founder can decide on the call and thinks
   in runway and ownership. A recruiter carries a band they cannot break. A
   hiring manager has to go fight for you and needs the ammunition. Same ask,
