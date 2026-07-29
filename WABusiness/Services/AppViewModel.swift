@@ -230,7 +230,8 @@ class AppViewModel: ObservableObject {
             do {
                 let system = ModelRouter.systemPrompt(for: mode, jd: jd, resume: resume,
                                                       accent: accentPreset, styleSample: styleSample,
-                                                      customAccent: customAccent)
+                                                      customAccent: customAccent,
+                                                      negotiation: NegotiationProfile.load())
                 // Repo mode: retrieve the real files first, so the answer can cite
                 // actual paths and line numbers instead of describing code generically.
                 var prompt = q

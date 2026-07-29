@@ -11,6 +11,17 @@ struct SetupView: View {
     @AppStorage("accentPreset") var accentPreset = AccentPreset.indian.rawValue
     @AppStorage("styleSample") var styleSample = ""
     @AppStorage("customAccent") var customAccent = ""
+    // Salary talk — filled in before the call, so a live question is just the question
+    @AppStorage("negCountry") var negCountry = SalaryCountry.india.rawValue
+    @AppStorage("negWorkNow") var negWorkNow = WorkSetup.remote.rawValue
+    @AppStorage("negWork") var negWork = WorkSetup.remote.rawValue
+    @AppStorage("negCounterpart") var negCounterpart = Counterpart.founder.rawValue
+    @AppStorage("negRole") var negRole = ""
+    @AppStorage("negYears") var negYears = ""
+    @AppStorage("negCurrentPay") var negCurrentPay = ""
+    @AppStorage("negBenefits") var negBenefits = ""
+    @AppStorage("negExpectedPay") var negExpectedPay = ""
+    @AppStorage("negLeverage") var negLeverage = ""
     @Binding var isSetupDone: Bool
     @ObservedObject private var health = ProviderHealth.shared
     @ObservedObject private var sync = NeonSync.shared
@@ -137,6 +148,14 @@ struct SetupView: View {
 
                 sectionDivider
 
+                // Salary — the numbers go in here BEFORE the call, so mid-negotiation
+                // a question can just be the question.
+                sectionHeader("Salary & negotiation", trailing: marketChip)
+                negotiationSection
+                    .padding(.top, 8)
+
+                sectionDivider
+
                 // Speaking style — answers are written in the user's own English accent/voice
                 sectionHeader("Speaking style", trailing: recordButton)
                 Picker("", selection: $accentPreset) {
@@ -219,6 +238,136 @@ struct SetupView: View {
         }
         .buttonStyle(.plain)
         .help("Record your own voice — the transcript teaches the AI how you speak"))
+    }
+
+    // MARK: - Salary & negotiation
+
+    private var country: SalaryCountry { SalaryCountry(rawValue: negCountry) ?? .india }
+
+    // The Salary pill only gives specific advice once there's a number to be
+    // specific about — so the header says outright whether it's armed.
+    private var marketChip: AnyView? {
+        AnyView(HStack(spacing: 6) {
+            if !NegotiationProfile.load().hasNumbers {
+                Text("add your numbers")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.spAmber)
+            }
+            Text("\(country.flag) \(country.code)")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.secondary)
+        })
+    }
+
+    private var negotiationSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Market — decides the currency, the convention and which levers exist
+            Picker("", selection: $negCountry) {
+                ForEach(SalaryCountry.allCases) { c in
+                    Text("\(c.flag)  \(c.name) · \(c.currency)").tag(c.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .help("Pay is quoted, structured and negotiated differently per market — this changes the advice, not just the currency symbol")
+
+            HStack(spacing: 10) {
+                LineField(label: "Current pay", placeholder: country.payHint, text: $negCurrentPay)
+                LineField(label: "What I want", placeholder: "target", text: $negExpectedPay)
+            }
+
+            HStack(spacing: 10) {
+                LineField(label: "Role on the table", placeholder: "Senior backend eng · seed startup", text: $negRole)
+                LineField(label: "Experience", placeholder: "6 yrs", text: $negYears)
+                    .frame(width: 88)
+            }
+
+            // Both halves, because the CHANGE is the argument: handing back a
+            // remote setup is a real cost and one of the cleanest things to put
+            // in the number — and it's invisible if only the new role is known.
+            VStack(alignment: .leading, spacing: 5) {
+                fieldLabel("Where the work happens")
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        subLabel("Today")
+                        Picker("", selection: $negWorkNow) {
+                            ForEach(WorkSetup.allCases) { w in Text(w.label).tag(w.rawValue) }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.secondary.opacity(0.5))
+                        .padding(.top, 14)
+                    VStack(alignment: .leading, spacing: 4) {
+                        subLabel("This role")
+                        Picker("", selection: $negWork) {
+                            ForEach(WorkSetup.allCases) { w in Text(w.label).tag(w.rawValue) }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
+                }
+                if negWorkNow != negWork {
+                    Text(moveNote)
+                        .font(.system(size: 10))
+                        .foregroundColor(.spAmber)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                fieldLabel("Who I'm negotiating with")
+                Picker("", selection: $negCounterpart) {
+                    ForEach(Counterpart.allCases) { c in Text(c.label).tag(c.rawValue) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .help("A founder can decide on the call; a recruiter carries a band they can't break — same ask, different delivery")
+            }
+
+            ContextField(label: "My current benefits",
+                         placeholder: "Health cover for family, 25 days leave, ESOPs vesting in 2027, home-office budget…",
+                         text: $negBenefits, height: 60)
+
+            ContextField(label: "My leverage & constraints",
+                         placeholder: "Competing offer at X, they need me by the 1st, 60-day notice I'd want bought out…",
+                         text: $negLeverage, height: 60)
+
+            Text("Hit the **Salary** pill in the bar (or just ask about the offer) and answers come back as the exact words to say, with the pushback lines ready.")
+                .font(.system(size: 10.5))
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // One line in the panel confirming the app read the change the way you meant it
+    private var moveNote: String {
+        let now  = WorkSetup(rawValue: negWorkNow) ?? .remote
+        let next = WorkSetup(rawValue: negWork) ?? .remote
+        switch (now, next) {
+        case (.remote, .onsite):
+            return "Giving up full remote — relocation, commute and cost of living go into the number."
+        case (.remote, .hybrid), (.hybrid, .onsite):
+            return "Losing flexibility — office days in writing, commute priced into the ask."
+        default:
+            return "Gaining flexibility — worth locking in writing, not worth paying for."
+        }
+    }
+
+    private func subLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 9.5))
+            .foregroundColor(.secondary.opacity(0.7))
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 9.5, weight: .semibold))
+            .tracking(1.2)
+            .foregroundColor(.secondary.opacity(0.8))
     }
 
     // MARK: - Codebase
@@ -498,6 +647,36 @@ struct SetupView: View {
     private func statusHelp(_ s: ProviderHealth.Status) -> String {
         if case .failed(let msg) = s { return msg }
         return ""
+    }
+}
+
+// Single-line sibling of ContextField — for the short factual answers
+// (a number, a title) where a text area would be overkill.
+struct LineField: View {
+    let label: String
+    let placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(label.uppercased())
+                .font(.system(size: 9.5, weight: .semibold))
+                .tracking(1.2)
+                .foregroundColor(.secondary.opacity(0.8))
+                .lineLimit(1)
+
+            TextField(placeholder, text: $text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12.5))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.primary.opacity(0.04))
+                        .overlay(RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.primary.opacity(0.08), lineWidth: 1))
+                )
+        }
     }
 }
 

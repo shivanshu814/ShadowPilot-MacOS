@@ -30,6 +30,7 @@
 		B725E07960E86AAA15A73846 /* ModelRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C2C769BA10B65398D6638 /* ModelRouter.swift */; };
 		BCE27F274BD127BFC59477F6 /* WABusinessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E2FAEA8341ABFEA457BA04 /* WABusinessApp.swift */; };
 		D0E4EFF8714348E399CB00A5 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E691655F80E5DE42A9356F1 /* SessionStore.swift */; };
+		DA8E19A7B5ED4B081026F211 /* NegotiationProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBE404695B87DCA08059D04 /* NegotiationProfile.swift */; };
 		E41B2A61AAA6EDF6278D54C2 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3875F5B38B59CB18B1A57452 /* HistoryView.swift */; };
 		E6D165DDA1D09337A26AFD56 /* RepoIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7010F2B650249746B32BE82 /* RepoIndex.swift */; };
 		ED05E3DFE80F24D031026E64 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490BB2A580E8E76CE257BFCE /* SpeechRecognizer.swift */; };
@@ -69,6 +70,7 @@
 		D92CEE9000F81C5786C53ADB /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 		E5239786BFAAB8B4AA5E6305 /* EnvConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvConfig.swift; sourceTree = "<group>"; };
 		EA5CC6AB281F05B71CC5077A /* SilenceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilenceDetector.swift; sourceTree = "<group>"; };
+		EBBE404695B87DCA08059D04 /* NegotiationProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NegotiationProfile.swift; sourceTree = "<group>"; };
 		EC4A72F3AA90051B8FD6FB33 /* ProviderHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHealth.swift; sourceTree = "<group>"; };
 		F7010F2B650249746B32BE82 /* RepoIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoIndex.swift; sourceTree = "<group>"; };
 		FAFAD48CFDF3AFB22E17D1F9 /* BedrockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedrockService.swift; sourceTree = "<group>"; };
@@ -152,6 +154,7 @@
 				CF8A637F9DEE5CEBC890F65E /* GPTService.swift */,
 				6405268FA4A76D83E0F35694 /* HotkeyManager.swift */,
 				AA7C2C769BA10B65398D6638 /* ModelRouter.swift */,
+				EBBE404695B87DCA08059D04 /* NegotiationProfile.swift */,
 				1FFFCB523AE51E652AD46EBE /* NeonSync.swift */,
 				EC4A72F3AA90051B8FD6FB33 /* ProviderHealth.swift */,
 				601E8AE7E7EDDB0947879FF5 /* RepoFetcher.swift */,
@@ -247,6 +250,7 @@
 				FCE407D59735AAA17F89BE35 /* HotkeyManager.swift in Sources */,
 				A2491A6DEA7D8AA68EAFADB7 /* MarkdownView.swift in Sources */,
 				B725E07960E86AAA15A73846 /* ModelRouter.swift in Sources */,
+				DA8E19A7B5ED4B081026F211 /* NegotiationProfile.swift in Sources */,
 				0B3F70B4CA63C5A8740B80C3 /* NeonSync.swift in Sources */,
 				34D5EA2AF4E4E876EC63C1A8 /* OverlayWindowController.swift in Sources */,
 				0E9C2AB9A100B3C970111382 /* ProviderHealth.swift in Sources */,

@@ -34,6 +34,10 @@ class AcceptsFirstMouseHostingView<R: View>: NSHostingView<R> {
 }
 
 class OverlayWindowController: NSWindowController {
+    // Wide enough for the full mode row (Auto…Cloud) plus the two toggles
+    // without SwiftUI squeezing the labels.
+    private static let width: CGFloat = 780
+
     private var resizeObserver: NSObjectProtocol?
 
     deinit {
@@ -42,7 +46,7 @@ class OverlayWindowController: NSWindowController {
 
     convenience init() {
         let window = OverlayWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 700, height: 52),
+            contentRect: NSRect(x: 0, y: 0, width: Self.width, height: 52),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -63,7 +67,7 @@ class OverlayWindowController: NSWindowController {
         self.init(window: window)
 
         if let screen = NSScreen.main {
-            let x = (screen.frame.width - 700) / 2
+            let x = (screen.frame.width - Self.width) / 2
             let y = screen.frame.height - 120
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }

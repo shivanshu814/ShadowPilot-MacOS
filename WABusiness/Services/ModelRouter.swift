@@ -20,7 +20,7 @@ enum Provider: String, CaseIterable, Identifiable {
 // MARK: - Answer modes
 
 enum AnswerMode: String, CaseIterable, Identifiable {
-    case auto, interview, coding, codeReview, systemDesign, repo, cloud
+    case auto, interview, coding, codeReview, systemDesign, negotiation, repo, cloud
     var id: String { rawValue }
 
     var label: String {
@@ -30,6 +30,7 @@ enum AnswerMode: String, CaseIterable, Identifiable {
         case .coding:       return "Code"
         case .codeReview:   return "Review"
         case .systemDesign: return "Design"
+        case .negotiation:  return "Salary"  // offer/comp talk, answered as words to say
         case .repo:         return "Local"   // our own chain, over the local index
         case .cloud:        return "Cloud"   // handed to a Cursor cloud agent
         }
@@ -40,6 +41,7 @@ enum AnswerMode: String, CaseIterable, Identifiable {
     var maxTokens: Int {
         switch self {
         case .interview, .auto: return 512
+        case .negotiation:      return 2048
         case .codeReview:       return 4096
         case .coding:           return 8192
         case .systemDesign:     return 8192
@@ -205,6 +207,10 @@ struct ModelRouter {
             candidates = [openRouterSmart(), openAI(), openRouterFallback(), groq(), bedrock()]
         case .systemDesign:
             candidates = [openRouterSmart(), openAI(), groq(), bedrock(), cloudflare()]
+        case .negotiation:
+            // Said out loud on a live call, so it has to be fast — but a wrong
+            // number is expensive, so the strong model still leads.
+            candidates = [openRouterSmart(), openAI(), groq(), cloudflare(), bedrock()]
         case .coding:
             candidates = [openRouterSmart(), openAI(), openRouterFallback(), groq(), bedrock()]
         case .repo:
@@ -254,6 +260,21 @@ struct ModelRouter {
 
         let codeEvidence = ["```", "diff --", "+++", "---", "func ", "def ", "class ", "();", "=>", "public ", "return "]
             .contains { lower.contains($0) }
+
+        // Money talk, checked before everything else — but never on a message
+        // that is obviously code, so a Go `package main` or an npm package
+        // question doesn't get routed to the negotiation coach.
+        let moneyWords = ["salary", "compensation", "ctc", " lpa", "lakh", "crore", "in-hand", "in hand",
+                          "take home", "take-home", "negotiat", "counter offer", "counteroffer",
+                          "pay cut", "hike", "a raise", "pay raise", "base pay", "pay band", "pay range", "salary range",
+                          "esop", "rsu", "stock option", "equity", "vesting", "sign-on", "signing bonus",
+                          "joining bonus", "relocation", "notice period", "buyout",
+                          "compensation package", "salary package", "offer letter", "my offer",
+                          "the offer", "their offer", "expected salary", "current salary",
+                          "how much should i ask", "how much do i ask", "what should i quote"]
+            .contains { lower.contains($0) }
+        if moneyWords && !codeEvidence { return .negotiation }
+
         let reviewIntent = ["review", "pull request", " pr ", "refactor", "code smell", "lgtm"]
             .contains { lower.contains($0) }
         if reviewIntent && (codeEvidence || lower.contains("code review") || lower.contains("pull request") || lower.contains(" pr ")) {
@@ -324,7 +345,8 @@ MY SPEAKING STYLE — I will read your answer aloud in my own voice, so it must 
 
     static func systemPrompt(for mode: AnswerMode, jd: String, resume: String,
                              accent: String = "", styleSample: String = "",
-                             customAccent: String = "") -> String {
+                             customAccent: String = "",
+                             negotiation: NegotiationProfile? = nil) -> String {
         var s = persona
         s += speakingStyleBlock(accent: accent, styleSample: styleSample, customAccent: customAccent)
         s += "\n\n"
@@ -417,6 +439,9 @@ Label each section on its own line:
 Keep every non-code section tight — it must sound like my real words, not an article.
 But scope rules win: if only the approach, only a fix, only complexity, or only one part is asked — give ONLY that, skip the rest of the template.
 """
+        case .negotiation:
+            s += negotiationInstructions
+            s += (negotiation ?? NegotiationProfile.load()).promptBlock
         case .repo, .cloud:
             s += repoInstructions   // .cloud never reaches a chat model; kept exhaustive
         }
@@ -424,6 +449,38 @@ But scope rules win: if only the approach, only a fix, only complexity, or only 
         if !resume.isEmpty { s += "\n\nMy Resume:\n\(resume)" }
         return s
     }
+
+    // MARK: - Negotiation mode
+
+    // A pay conversation is not a Q&A: the answer has to be the actual sentence
+    // said next, with a number in it. It is also the one mode where being wrong
+    // costs real money, so the rules below are mostly about not inventing data
+    // and not coaching the user into a lie they'd have to defend.
+    private static let negotiationInstructions = """
+You are my compensation negotiation coach, sitting next to me while I talk to the company. I read your answer out loud, so it has to be my words, not advice ABOUT what to say.
+
+Follow this exact flow, each section SHORT:
+**Where this stands:** one line — what they just did, and what it tells me about their room to move.
+**My number:** the exact ask, in the local currency and the local convention, with the range I'm anchoring inside. One number leads; never give a wide vague band.
+**Why it holds:** 2-3 lines I can actually defend — the scope of the role, what I bring, my leverage. Reasons about the value of the work, never about my personal expenses.
+**Say this:** the word-for-word sentence I say next. Spoken English, short enough to say in one breath, confident and warm. This is the part I read aloud — get it right.
+**If they push back:** the 2-3 objections most likely to come back ("that's above the band", "we can't do that in cash", "the budget is fixed"), each with my one-line reply.
+**Floor:** the number and terms below which I walk, and what I'd trade instead if cash is genuinely stuck — equity, sign-on, title, level, a written 6-month review, start date, remote days, extra leave.
+
+HARD RULES:
+- Use the numbers from MY SITUATION below. Never invent a different current or target number for me.
+- Never quote a specific market figure, survey, percentile or company band as if it were data. Reason in ranges and say what it is: my read of the market. A made-up "the market rate is X" collapses the second they ask where it came from.
+- Never coach me to lie. Inflating my current pay, inventing a competing offer, or fabricating a deadline is out — I would have to defend it, and it can lose the offer. Not volunteering something is fine; making it up is not.
+- Deflect before anchoring: if they haven't given a range yet, the best move is usually to ask for the band for the level before naming my number. But if I'm being pushed for a number, give one — never coach me into an awkward silence.
+- Silence and a pause are tools. When the right move is to stop talking after a sentence, say so.
+- Negotiate the whole package, not just the base — but only after the base is as high as it's going.
+- Keep it warm. The person on the other side has to want to work with me on Monday. No ultimatums unless I've said I'm genuinely ready to walk.
+
+SCOPE — answer exactly what was asked:
+- A narrow question ("should I say a number first?", "is 15% a reasonable ask?") gets a direct answer plus the **Say this** line, and nothing else.
+- The full template is for "here's my offer, what do I do" moments.
+- A follow-up gets only the delta — what changes now that they moved.
+""" + incrementalRule
 
     // MARK: - Repo mode
 

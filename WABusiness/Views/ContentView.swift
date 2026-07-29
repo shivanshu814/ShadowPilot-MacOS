@@ -291,6 +291,24 @@ struct SpotlightBar: View {
         }
     }
 
+    private func modeHelp(_ mode: AnswerMode) -> String {
+        switch mode {
+        case .auto:
+            return "Detect question type automatically"
+        case .repo:
+            return repo.isReady
+                ? "Answer from \(repo.rootName) — real paths, line numbers, exact diff"
+                : "No codebase yet — load one with /repo <folder or github url>"
+        case .negotiation:
+            let p = NegotiationProfile.load()
+            return p.hasNumbers
+                ? "Salary talk for \(p.country.flag) \(p.country.name) — the number, the exact words, and the pushback lines"
+                : "Salary talk — add your current and target pay in Setup (⌘⇧S) so the advice comes back with real numbers"
+        default:
+            return "Force \(mode.label) mode"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
@@ -387,11 +405,7 @@ struct SpotlightBar: View {
                                        dimmed: mode == .repo && !repo.isReady) {
                             selectMode(mode)
                         }
-                        .help(mode == .repo
-                              ? (repo.isReady
-                                 ? "Answer from \(repo.rootName) — real paths, line numbers, exact diff"
-                                 : "No codebase yet — load one with /repo <folder or github url>")
-                              : (mode == .auto ? "Detect question type automatically" : "Force \(mode.label) mode"))
+                        .help(modeHelp(mode))
                     }
                 }
 

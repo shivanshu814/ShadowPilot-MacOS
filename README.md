@@ -29,6 +29,10 @@ reads all of it and writes a findings report. See "Cloud review" below.
 **Screenshot analysis.** One keystroke captures the screen and sends it to a
 vision model, which returns an approach followed by fully commented code.
 
+**Salary mode.** Your current pay, benefits, target, work setup and market go in
+before the call. During it, answers come back as the exact words to say, with
+the pushback lines ready. See "Salary mode" below.
+
 **Conversation memory.** A rolling history means follow-ups inherit both the
 context and the mode. Asking "now add multi-region" answers only the delta
 instead of regenerating the whole design.
@@ -146,6 +150,7 @@ blank drops that provider from every chain. One working key is enough to run.
 | Code | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o, Groq, Bedrock | 8192 |
 | Review | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o, Groq, Bedrock | 4096 |
 | Design | OpenRouter Sonnet 4.5, OpenAI, Groq, Bedrock, Cloudflare | 8192 |
+| Salary | OpenRouter Sonnet 4.5, OpenAI, Groq, Cloudflare, Bedrock | 2048 |
 | Local | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o, Bedrock | 8192 |
 | Screenshot | OpenRouter Sonnet 4.5, OpenAI, OpenRouter GPT-4o (vision only) | 8192 |
 | Cloud | Cursor agent, no chain and no fallback | not applicable |
@@ -234,6 +239,47 @@ flow". Hands-free mode never triggers a cloud review, so a pause in
 conversation cannot start a job that costs minutes.
 
 
+## Salary mode
+
+The offer conversation is the one part of an interview loop where a single
+sentence is worth a year of raises, and it always happens live. So the numbers
+go in beforehand, in Setup, under "Salary & negotiation":
+
+- **Market**, picked by flag. This is not a currency symbol swap. Each market
+  carries its own rules about how an offer is even quoted and which levers are
+  movable: India in LPA with fixed versus variable and near worthless ESOPs,
+  the US in base plus RSU plus sign on where level beats number, Germany in 13
+  or 14 monthly payments, the UAE where gratuity is calculated on basic only,
+  Australia where the answer to "does that include super" changes the offer by
+  a tenth. Remote first companies get their own entry, because the only
+  question that matters there is whether the band is location adjusted.
+- **Current pay and target**, in whatever form you actually think in.
+- **Current benefits**, so nothing already in hand gets traded away by accident.
+- **Where the work happens.** Office, hybrid or remote each open different
+  asks: relocation and commute, office days written into the letter, or the
+  location adjusted band question.
+- **Who you are negotiating with.** A founder can decide on the call and thinks
+  in runway and ownership. A recruiter carries a band they cannot break. A
+  hiring manager has to go fight for you and needs the ammunition. Same ask,
+  completely different delivery.
+- **Leverage and constraints**, such as a competing offer or a notice period
+  you want bought out.
+
+Then during the call, hit the Salary pill or just ask about the offer. Answers
+come back as: where this stands, my number, why it holds, the word for word
+sentence to say next, the two or three objections most likely to come back with
+a reply for each, and the floor to walk at with what to trade instead.
+
+Two things it will not do. It never quotes a market figure, percentile or
+company band as if it were data, because a number that collapses when they ask
+where it came from is worse than no number. And it never coaches you into a
+lie: inflating your current pay or inventing a competing offer is out, since
+you would have to defend it. Not volunteering something is fine.
+
+Leave the numbers blank and the mode still works, it just coaches in ranges and
+asks for the one number it needs first.
+
+
 ## Keyboard shortcuts
 
 All shortcuts are global. The app does not need to be focused.
@@ -308,6 +354,7 @@ WABusiness/
     SessionStore.swift            local SQLite session log
     NeonSync.swift                optional Neon Postgres backup
     ConversationTurn.swift        conversation history model
+    NegotiationProfile.swift      salary profile, market and counterpart rules
   Views/
     ContentView.swift             overlay bar and mode pills
     SetupView.swift               session setup
